@@ -3,6 +3,5 @@
 #ifndef GAME_SERVER_GAMEMODES_GAMEMODE_H
 #define GAME_SERVER_GAMEMODES_GAMEMODE_H
 
-#define GAME_NAME "DDraceNetwork"
-#define TEST_NAME "TestDDraceNetwork"
+#define GAME_NAME "blmod"
 #endif // GAME_SERVER_GAMEMODES_GAMEMODE_H

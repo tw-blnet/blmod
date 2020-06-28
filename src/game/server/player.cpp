@@ -967,19 +967,6 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			if(m_HasFinishScore && m_Score == -9999)
 				m_Score = -10000;
 			Server()->ExpireServerInfo();
-			int Birthday = Result.m_Data.m_Info.m_Birthday;
-			if(Birthday != 0)
-			{
-				char aBuf[512];
-				str_format(aBuf, sizeof(aBuf),
-						"Happy DDNet birthday to %s for finishing their first map %d year%s ago!",
-						Server()->ClientName(m_ClientID), Birthday, Birthday > 1 ? "s" : "");
-				GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, m_ClientID);
-				str_format(aBuf, sizeof(aBuf),
-						"Happy DDNet birthday, %s!\nYou have finished your first map exactly %d year%s ago!",
-						Server()->ClientName(m_ClientID), Birthday, Birthday > 1 ? "s" : "");
-				GameServer()->SendBroadcast(aBuf, m_ClientID);
-			}
 			break;
 		}
 	}

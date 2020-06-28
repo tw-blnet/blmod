@@ -12,7 +12,7 @@
 CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
 		IGameController(pGameServer), m_Teams(pGameServer), m_pInitResult(nullptr)
 {
-	m_pGameType = g_Config.m_SvTestingCommands ? TEST_NAME : GAME_NAME;
+	m_pGameType = GAME_NAME;
 
 	InitTeleporter();
 }
