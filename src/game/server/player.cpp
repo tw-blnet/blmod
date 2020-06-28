@@ -64,7 +64,7 @@ void CPlayer::Reset()
 	m_Moderating = false;
 	m_EyeEmote = true;
 	if(Server()->IsSixup(m_ClientID))
-		m_TimerType = TIMERTYPE_SIXUP;
+		m_TimerType = TIMERTYPE_NONE;
 	else
 		m_TimerType = (g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER || g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER_AND_BROADCAST) ? TIMERTYPE_BROADCAST : g_Config.m_SvDefaultTimerType;
 
