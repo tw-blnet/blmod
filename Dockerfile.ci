@@ -1,0 +1,13 @@
+FROM debian:bullseye-slim
+WORKDIR /ddnet
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates cmake make g++ python3
+COPY . .
+RUN mkdir build
+WORKDIR build
+RUN cmake -DCLIENT=OFF ..
+RUN make -j$(nproc)
+
+FROM debian:bullseye-slim
+WORKDIR /app
+COPY --from=0 /ddnet/build/DDNet-Server .
+CMD ["/app/DDNet-Server"]
