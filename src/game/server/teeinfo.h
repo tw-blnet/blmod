@@ -4,7 +4,7 @@
 class CTeeInfo
 {
 public:
-    constexpr static const float DARKEST_LGT_7 = 61/255.0f;
+    constexpr static const float DARKEST_LGT_7 = 100/255.0f;
 
     char m_SkinName[64] = {'\0'};
     int m_UseCustomColor = 0;
@@ -25,5 +25,11 @@ public:
 
     void FromSixup();
     void ToSixup();
+
+    // return hash for skin color
+    unsigned long colorHash();
+
+    // return hash for skin color & skin name
+    unsigned long fullHash();
 };
 #endif //GAME_SERVER_TEEINFO_H

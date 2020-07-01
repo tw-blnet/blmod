@@ -1,5 +1,6 @@
 #include <base/system.h>
 #include <base/color.h>
+#include <zlib.h>
 
 #include "teeinfo.h"
 
@@ -139,4 +140,27 @@ void CTeeInfo::FromSixup()
 	m_UseCustomColor = true;
 	m_ColorBody = ColorHSLA(m_aUseCustomColors[0] ? m_aSkinPartColors[0] : 255).UnclampLighting(DARKEST_LGT_7).Pack(ColorHSLA::DARKEST_LGT);
 	m_ColorFeet = ColorHSLA(m_aUseCustomColors[4] ? m_aSkinPartColors[4] : 255).UnclampLighting(DARKEST_LGT_7).Pack(ColorHSLA::DARKEST_LGT);
+}
+
+unsigned long CTeeInfo::colorHash()
+{
+	uLong crc = crc32(0L, Z_NULL, 0);
+
+	crc = crc32(crc, (Bytef*) &m_UseCustomColor, sizeof(m_UseCustomColor));
+	crc = crc32(crc, (Bytef*) &m_ColorBody, sizeof(m_ColorBody));
+	crc = crc32(crc, (Bytef*) &m_ColorFeet, sizeof(m_ColorFeet));
+	crc = crc32(crc, (Bytef*) &m_aUseCustomColors, sizeof(m_aUseCustomColors));
+	crc = crc32(crc, (Bytef*) &m_aSkinPartColors, sizeof(m_aSkinPartColors));
+
+	return crc;
+}
+
+unsigned long CTeeInfo::fullHash()
+{
+	uLong crc = colorHash();
+
+	crc = crc32(crc, (Bytef*) &m_SkinName, sizeof(m_SkinName));
+	crc = crc32(crc, (Bytef*) &m_apSkinPartNames, sizeof(m_apSkinPartNames));
+
+	return crc;
 }

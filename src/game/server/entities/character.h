@@ -34,6 +34,11 @@ enum
 	FAKETUNE_NOHAMMER = 64,
 };
 
+enum
+{
+	RAINBOW_FULL,
+};
+
 class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
@@ -184,6 +189,24 @@ private:
 	CSaveTee m_RescueTee;
 	bool m_Solo;
 
+	bool m_Rainbow;
+	int m_RainbowMode = RAINBOW_FULL;
+
+	struct
+	{
+		int m_UseCustomColor;
+		int m_ColorBody;
+		int m_ColorFeet;
+		bool m_aUseCustomColors[6];
+		int m_aSkinPartColors[6];
+	} m_RealColors;
+
+	struct
+	{
+		unsigned int m_aSkipCounter[MAX_CLIENTS];
+		unsigned long m_aColorHashes[MAX_CLIENTS];
+	} m_SkinCaching;
+
 public:
 	CGameTeams* Teams();
 	void FillAntibot(CAntibotCharacterData *pData);
@@ -271,6 +294,9 @@ public:
 	bool HasTelegunGun() { return m_Core.m_HasTelegunGun; };
 	bool HasTelegunGrenade() { return m_Core.m_HasTelegunGrenade; };
 	bool HasTelegunLaser() { return m_Core.m_HasTelegunLaser; };
+
+	void SetRainbow(bool Value);
+	void SetRainbowMode(int Mode);
 };
 
 enum

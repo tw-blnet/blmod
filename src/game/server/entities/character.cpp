@@ -763,6 +763,31 @@ void CCharacter::Tick()
 		m_EmoteStop = -1;
 	}
 
+	if (m_Rainbow)
+	{
+		switch (m_RainbowMode) {
+			case RAINBOW_FULL:
+				const int FEET_OFFSET = 15;
+				m_pPlayer->m_TeeInfos.m_ColorBody = ((Server()->Tick() % 256) << 0x10) | 0xFF00;
+				m_pPlayer->m_TeeInfos.m_ColorFeet = (((Server()->Tick() + FEET_OFFSET) % 256) << 0x10) | 0xFF00;
+				break;
+		}
+
+		for (int i = 0; i < 6; i++) {
+			m_pPlayer->m_TeeInfos.m_aUseCustomColors[i] = true;
+		}
+
+		int colorBody = ColorHSLA(m_pPlayer->m_TeeInfos.m_ColorBody).UnclampLighting().Pack(CTeeInfo::DARKEST_LGT_7) | 0xFF000000;
+		int colorFeet = ColorHSLA(m_pPlayer->m_TeeInfos.m_ColorFeet).UnclampLighting().Pack(CTeeInfo::DARKEST_LGT_7) | 0xFF000000;
+
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[0] = colorBody; // body
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[1] = colorBody; // marking
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[2] = colorBody; // decoration
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[3] = colorFeet; // hands
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[4] = colorFeet; // feet
+		m_pPlayer->m_TeeInfos.m_aSkinPartColors[5] = colorBody; // eyes
+	}
+
 	DDRaceTick();
 
 	Antibot()->OnCharacterTick(m_pPlayer->GetCID());
@@ -943,6 +968,8 @@ void CCharacter::Die(int Killer, int Weapon)
 
 	m_Alive = false;
 	m_Solo = false;
+
+	SetRainbow(false);
 
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
@@ -1186,6 +1213,34 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID)
 		pCharacter->m_Health = Health;
 		pCharacter->m_Armor = Armor;
 		pCharacter->m_TriggeredEvents = 0;
+
+		// msg to update skin for 0.7 player
+		if (!m_SkinCaching.m_aSkipCounter[SnappingClient])
+		{
+			const unsigned long hash = GetPlayer()->m_TeeInfos.colorHash();
+			if (m_SkinCaching.m_aColorHashes[SnappingClient] != hash)
+			{
+				m_SkinCaching.m_aColorHashes[SnappingClient] = hash;
+
+				protocol7::CNetMsg_Sv_SkinChange Msg;
+				Msg.m_ClientID = ID;
+				for(int p = 0; p < 6; p++)
+				{
+					Msg.m_apSkinPartNames[p] = GetPlayer()->m_TeeInfos.m_apSkinPartNames[p];
+					Msg.m_aSkinPartColors[p] = GetPlayer()->m_TeeInfos.m_aSkinPartColors[p];
+					Msg.m_aUseCustomColors[p] = GetPlayer()->m_TeeInfos.m_aUseCustomColors[p];
+				}
+
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, SnappingClient);
+			}
+		}
+
+		m_SkinCaching.m_aSkipCounter[SnappingClient]++;
+
+		if (m_SkinCaching.m_aSkipCounter[SnappingClient] > 2) // skip next 2 snaps
+		{
+			m_SkinCaching.m_aSkipCounter[SnappingClient] = 0;
+		}
 	}
 }
 
@@ -1773,6 +1828,12 @@ void CCharacter::HandleTiles(int Index)
 	{
 		m_Core.m_HasTelegunLaser = false;
 		GameServer()->SendChatTarget(GetPlayer()->GetCID(), "Teleport laser disabled");
+	}
+
+	// rainbow
+	if (m_TileIndex == TILE_RAINBOW && !m_Rainbow)
+	{
+		SetRainbow(true);
 	}
 
 	// stopper
@@ -2418,4 +2479,44 @@ void CCharacter::Rescue()
 		m_Core.m_HookState = HOOK_IDLE;
 		m_StartTime = StartTime;
 	}
+}
+
+void CCharacter::SetRainbow(bool Value)
+{
+	if (m_Rainbow == Value)
+		return;
+
+	if (Value)
+	{
+		m_Rainbow = true;
+
+		m_RealColors.m_UseCustomColor = GetPlayer()->m_TeeInfos.m_UseCustomColor;
+		m_RealColors.m_ColorBody = GetPlayer()->m_TeeInfos.m_ColorBody;
+		m_RealColors.m_ColorFeet = GetPlayer()->m_TeeInfos.m_ColorFeet;
+
+		for (int i = 0; i < 6; i++)
+		{
+			m_RealColors.m_aUseCustomColors[i] = GetPlayer()->m_TeeInfos.m_aUseCustomColors[i];
+			m_RealColors.m_aSkinPartColors[i] = GetPlayer()->m_TeeInfos.m_aSkinPartColors[i];
+		}
+	}
+	else
+	{
+		m_Rainbow = false;
+
+		GetPlayer()->m_TeeInfos.m_UseCustomColor = m_RealColors.m_UseCustomColor;
+		GetPlayer()->m_TeeInfos.m_ColorBody = m_RealColors.m_ColorBody;
+		GetPlayer()->m_TeeInfos.m_ColorFeet = m_RealColors.m_ColorFeet;
+
+		for (int i = 0; i < 6; i++)
+		{
+			GetPlayer()->m_TeeInfos.m_aUseCustomColors[i] = m_RealColors.m_aUseCustomColors[i];
+			GetPlayer()->m_TeeInfos.m_aSkinPartColors[i] = m_RealColors.m_aSkinPartColors[i];
+		}
+	}
+}
+
+void CCharacter::SetRainbowMode(int Mode)
+{
+	m_RainbowMode = Mode;
 }
