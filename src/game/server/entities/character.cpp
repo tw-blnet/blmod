@@ -767,6 +767,7 @@ void CCharacter::Tick()
 	{
 		switch (m_RainbowMode) {
 			case RAINBOW_FULL:
+				m_pPlayer->m_TeeInfos.m_UseCustomColor = true;
 				m_pPlayer->m_TeeInfos.m_ColorBody = ((Server()->Tick() % 256) << 0x10) | 0xFF00;
 				m_pPlayer->m_TeeInfos.m_ColorFeet = ((Server()->Tick() % 256) << 0x10) | 0xFF00;
 				break;
