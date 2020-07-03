@@ -437,7 +437,7 @@ void CGameTeams::SendTeamsState(int ClientID)
 	CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 
 	for(unsigned i = 0; i < MAX_CLIENTS; i++)
-		Msg.AddInt(m_Core.Team(i));
+		Msg.AddInt( minimum(m_Core.Team(i), 0) );
 
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
