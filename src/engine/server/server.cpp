@@ -2199,7 +2199,7 @@ char *CServer::GetMapName()
 int CServer::LoadMap(const char *pMapName)
 {
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
+	str_format(aBuf, sizeof(aBuf), "gamemaps/%s.map", pMapName);
 	GameServer()->OnMapChange(aBuf, sizeof(aBuf));
 
 	if(!m_pMap->Load(aBuf))
@@ -2240,12 +2240,21 @@ int CServer::LoadMap(const char *pMapName)
 
 	// load complete map into memory for download
 	{
+		str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
 		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
 		m_aCurrentMapSize[SIX] = (unsigned int)io_length(File);
 		free(m_apCurrentMapData[SIX]);
 		m_apCurrentMapData[SIX] = (unsigned char *)malloc(m_aCurrentMapSize[SIX]);
 		io_read(File, m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
 		io_close(File);
+
+		m_aCurrentMapSha256[SIX] = sha256(m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
+		m_aCurrentMapCrc[SIX] = crc32(0, m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
+		sha256_str(m_aCurrentMapSha256[SIX], aSha256, sizeof(aSha256));
+		str_format(aBufMsg, sizeof(aBufMsg), "%s sha256 is %s", aBuf, aSha256);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
+		str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_aCurrentMapCrc[SIX]);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
 	}
 
 	// load sixup version of the map

@@ -71,6 +71,51 @@ void CLayerTiles::PrepareForSave()
 			for(int x = 0; x < m_Width; x++)
 				m_pTiles[y*m_Width+x].m_Flags |= m_pEditor->m_Map.m_lImages[m_Image]->m_aTileFlags[m_pTiles[y*m_Width+x].m_Index];
 	}
+
+	if(m_Front || m_Game || m_Speedup || m_Switch || m_Tele || m_Tune)
+	{
+		for(int y = 0; y < m_Height; y++)
+			for(int x = 0; x < m_Width; x++)
+				if (m_pTiles[y*m_Width+x].m_Index != 1)
+				{
+					CTile* tile = &m_pTiles[y*m_Width+x];
+					tile->m_Index = m_Game ? 2 : 0;
+					tile->m_Flags = 0;
+					tile->m_Reserved = 0;
+					tile->m_Skip = 0;
+
+					if (m_Speedup) {
+						CSpeedupTile* speedupTile = &((CLayerSpeedup*) this)->m_pSpeedupTile[y*m_Width+x];
+						speedupTile->m_Angle = 0;
+						speedupTile->m_Force = 0;
+						speedupTile->m_MaxSpeed = 0;
+						speedupTile->m_Type = 0;
+					}
+
+					if (m_Switch)
+					{
+						CSwitchTile* switchTile = &((CLayerSwitch*) this)->m_pSwitchTile[y*m_Width+x];
+						switchTile->m_Delay = 0;
+						switchTile->m_Flags = 0;
+						switchTile->m_Number = 0;
+						switchTile->m_Type = 0;
+					}
+
+					if (m_Tele)
+					{
+						CTeleTile* teleTile = &((CLayerTele*) this)->m_pTeleTile[y*m_Width+x];
+						teleTile->m_Number = 0;
+						teleTile->m_Type = 0;
+					}
+
+					if (m_Tune)
+					{
+						CTuneTile* tuneTile = &((CLayerTune*) this)->m_pTuneTile[y*m_Width+x];
+						tuneTile->m_Number = 0;
+						tuneTile->m_Type = 0;
+					}
+				}
+	}
 }
 
 void CLayerTiles::MakePalette()
