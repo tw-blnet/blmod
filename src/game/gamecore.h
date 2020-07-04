@@ -297,6 +297,7 @@ public:
 
 	CCharacterCore *m_pCarryingCharacterCore;
 	const int m_Team;
+	int m_AtStand;
 	vec2 m_Pos;
 	vec2 m_Vel;
 

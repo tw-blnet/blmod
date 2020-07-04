@@ -315,6 +315,7 @@ void CCharacterCore::Tick(bool UseInput)
 				{
 					if (m_HookedPlayer == -1 || distance(m_HookPos, pFlag->m_Pos) < Distance)
 					{
+						pFlag->m_AtStand = false;
 						m_HookState = HOOK_GRABBED;
 						m_HookedFlag = pFlag->m_Team;
 						Distance = distance(m_HookPos, pFlag->m_Pos);

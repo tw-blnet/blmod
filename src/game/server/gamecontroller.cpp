@@ -406,25 +406,18 @@ void IGameController::PostReset()
 
 int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
-	// int HadFlag = 0;
-
     // drop flags
     for(int i = 0; i < 2; i++)
     {
         CFlag *F = m_apFlags[i];
-        // if(F && pKiller && pKiller->GetCharacter() && F->m_pCarryingCharacter == pKiller->GetCharacter())
-        //     HadFlag |= 2;
         if(F && F->GetCarryingCharacter() == pVictim)
         {
             F->m_DropTick = Server()->Tick();
 			F->SetCarryingCharacter(0);
             F->m_Core.m_Vel = vec2(0,0);
-
-            // HadFlag |= 1;
         }
     }
 
-    // return HadFlag;
     return 0;
 }
 
@@ -542,6 +535,9 @@ void IGameController::Tick()
 			continue;
 		}
 
+		if(!F->GetAtStand() && !F->m_DropTick)
+			F->m_DropTick = Server()->Tick();
+
 		if(F->GetCarryingCharacter())
 		{
 			// update flag position
@@ -579,12 +575,12 @@ void IGameController::Tick()
 				if (!apCloseCCharacters[i]->m_FreezeTime && (!m_apFlags[1-fi]->GetCarryingCharacter() || (m_apFlags[1-fi]->GetCarryingCharacter()->GetPlayer()->GetCID() != apCloseCCharacters[i]->GetPlayer()->GetCID())) && (Server()->Tick() - m_apFlags[fi]->m_DropTick) >= Server()->TickSpeed() / 2)
 				{
 					// take the flag
-					if(F->m_AtStand)
+					if(F->GetAtStand())
 					{
 						F->m_GrabTick = Server()->Tick();
 					}
 
-					F->m_AtStand = 0;
+					F->SetAtStand(0);
 					F->SetCarryingCharacter(apCloseCCharacters[i]);
 
 					char aBuf[256];
@@ -597,7 +593,7 @@ void IGameController::Tick()
 				}
 			}
 
-			if(!F->GetCarryingCharacter() && !F->m_AtStand)
+			if(!F->GetCarryingCharacter() && !F->GetAtStand())
 			{
 				if(Server()->Tick() > F->m_DropTick + Server()->TickSpeed()*180)
 				{
@@ -715,7 +711,7 @@ void IGameController::Snap(int SnappingClient)
 
 		if(m_apFlags[TEAM_RED])
 		{
-			if(m_apFlags[TEAM_RED]->m_AtStand)
+			if(m_apFlags[TEAM_RED]->GetAtStand())
 				pGameDataObj->m_FlagCarrierRed = FLAG_ATSTAND;
 			else if(m_apFlags[TEAM_RED]->GetCarryingCharacter() && m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer())
 				pGameDataObj->m_FlagCarrierRed = m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer()->GetCID();
@@ -727,7 +723,7 @@ void IGameController::Snap(int SnappingClient)
 
 		if(m_apFlags[TEAM_BLUE])
 		{
-			if(m_apFlags[TEAM_BLUE]->m_AtStand)
+			if(m_apFlags[TEAM_BLUE]->GetAtStand())
 				pGameDataObj->m_FlagCarrierBlue = FLAG_ATSTAND;
 			else if(m_apFlags[TEAM_BLUE]->GetCarryingCharacter() && m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer())
 				pGameDataObj->m_FlagCarrierBlue = m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer()->GetCID();
@@ -744,7 +740,7 @@ void IGameController::Snap(int SnappingClient)
 		pGameDataFlag->m_FlagDropTickRed = 0;
 		if(m_apFlags[TEAM_RED])
 		{
-			if(m_apFlags[TEAM_RED]->m_AtStand)
+			if(m_apFlags[TEAM_RED]->GetAtStand())
 				pGameDataFlag->m_FlagCarrierRed = FLAG_ATSTAND;
 			else if(m_apFlags[TEAM_RED]->GetCarryingCharacter() && m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer())
 				pGameDataFlag->m_FlagCarrierRed = m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer()->GetCID();
@@ -760,7 +756,7 @@ void IGameController::Snap(int SnappingClient)
 		pGameDataFlag->m_FlagDropTickBlue = 0;
 		if(m_apFlags[TEAM_BLUE])
 		{
-			if(m_apFlags[TEAM_BLUE]->m_AtStand)
+			if(m_apFlags[TEAM_BLUE]->GetAtStand())
 				pGameDataFlag->m_FlagCarrierBlue = FLAG_ATSTAND;
 			else if(m_apFlags[TEAM_BLUE]->GetCarryingCharacter() && m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer())
 				pGameDataFlag->m_FlagCarrierBlue = m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer()->GetCID();

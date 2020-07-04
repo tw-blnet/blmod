@@ -20,7 +20,7 @@ CFlag::CFlag(CGameWorld *pGameWorld, int Team)
 void CFlag::Reset()
 {
 	m_pCarryingCharacter = NULL;
-	m_AtStand = 1;
+	m_Core.m_AtStand = 1;
 	m_Pos = m_StandPos;
 	m_GrabTick = 0;
 	m_CarrierFreezedTick = 0;
@@ -60,4 +60,8 @@ void CFlag::SetCarryingCharacter(CCharacter *Character)
 	m_CarrierFreezedTick = 0;
 	m_pCarryingCharacter = Character;
 	m_Core.m_pCarryingCharacterCore = Character ? Character->Core() : 0;
+}
+
+void CFlag::SetAtStand(bool AtStand) {
+	m_Core.m_AtStand = AtStand;
 }

@@ -15,7 +15,6 @@ public:
 	CFlagCore m_Core;
 
 	int m_Team;
-	int m_AtStand;
 	int m_DropTick;
 	int m_GrabTick;
 	int m_CarrierFreezedTick;
@@ -29,6 +28,9 @@ public:
 
 	CCharacter *GetCarryingCharacter() const { return m_pCarryingCharacter; }
 	void SetCarryingCharacter(CCharacter *Character);
+
+	bool GetAtStand() const { return m_Core.m_AtStand; }
+	void SetAtStand(bool AtStand);
 
 private:
 	CCharacter *m_pCarryingCharacter;
