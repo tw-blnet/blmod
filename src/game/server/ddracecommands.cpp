@@ -752,3 +752,39 @@ void CGameContext::ConDumpAntibot(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->Antibot()->Dump();
 }
+
+void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int Target = pResult->GetVictim();
+
+	if(Target < 0 || Target > MAX_CLIENTS)
+	{
+		return;
+	}
+
+	const char *pDesiredOptionName = pResult->NumArguments() > 1 ? pResult->GetString(1) : "";
+	int DesiredOption = -1;
+	for (int i = 0; i < NUM_RAINBOWS; i++)
+	{
+		if (str_comp_nocase(RAINBOW_OPTIONS[i].m_pName, pDesiredOptionName) == 0)
+		{
+			DesiredOption = RAINBOW_OPTIONS[i].m_Rainbow;
+			break;
+		}
+	}
+
+	CCharacter* pChr = pSelf->GetPlayerChar(Target);
+	if (!pChr)
+		return;
+
+	if (DesiredOption >= 0)
+	{
+		pChr->SetRainbow(true);
+		pChr->SetRainbowMode(DesiredOption);
+	}
+	else
+	{
+		pChr->SetRainbow(false);
+	}
+}

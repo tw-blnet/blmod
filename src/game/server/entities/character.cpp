@@ -16,6 +16,12 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS)
 
+const CRainbowOption RAINBOW_OPTIONS[] = {
+	{RAINBOW_FULL, "default"},
+	{RAINBOW_GREY, "grey"},
+	{RAINBOW_FLAME, "flame"},
+};
+
 // Character, "physical" player's part
 CCharacter::CCharacter(CGameWorld *pWorld)
 : CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER)
@@ -765,12 +771,52 @@ void CCharacter::Tick()
 
 	if (m_Rainbow)
 	{
+		m_pPlayer->m_TeeInfos.m_UseCustomColor = true;
 		switch (m_RainbowMode) {
 			case RAINBOW_FULL:
-				m_pPlayer->m_TeeInfos.m_UseCustomColor = true;
-				m_pPlayer->m_TeeInfos.m_ColorBody = ((Server()->Tick() % 256) << 0x10) | 0xFF00;
-				m_pPlayer->m_TeeInfos.m_ColorFeet = ((Server()->Tick() % 256) << 0x10) | 0xFF00;
+			{
+				m_pPlayer->m_TeeInfos.m_ColorBody = ((Server()->Tick() % 0x100) << 0x10) | 0xFF00;
+				m_pPlayer->m_TeeInfos.m_ColorFeet = ((Server()->Tick() % 0x100) << 0x10) | 0xFF00;
 				break;
+			}
+
+			case RAINBOW_GREY:
+			{
+				const int Tick = Server()->Tick() % 0x200;
+				const int State = Tick >= 0x100;
+				const int Color = State ? 0x1FF - Tick : Tick;
+
+				m_pPlayer->m_TeeInfos.m_ColorBody = Color;
+				m_pPlayer->m_TeeInfos.m_ColorFeet = Color;
+				break;
+			}
+
+			case RAINBOW_FLAME:
+			{
+				const int RAINBOW_FLAME_MIN = 0;
+				const int RAINBOW_FLAME_MAX = 30;
+				const int FEET_OFFSET = 13;
+
+				auto Calc = [](int ServerTick, int Min, int Max)
+				{
+						const int Range = Max - Min;
+						const int Tick = ServerTick % (2 * Range);
+						const int State = Tick >= Range;
+						const int Color = State ? (2 * Range - Tick) : Tick;
+						return Color;
+				};
+
+				m_pPlayer->m_TeeInfos.m_ColorBody =
+						(
+							Calc(Server()->Tick(), RAINBOW_FLAME_MIN, RAINBOW_FLAME_MAX) << 0x10
+						) | 0xFF00;
+
+				m_pPlayer->m_TeeInfos.m_ColorFeet =
+						(
+							Calc(Server()->Tick() + FEET_OFFSET, RAINBOW_FLAME_MIN, RAINBOW_FLAME_MAX) << 0x10
+						) | 0xFF00;
+				break;
+			}
 		}
 
 		for (int i = 0; i < 6; i++) {

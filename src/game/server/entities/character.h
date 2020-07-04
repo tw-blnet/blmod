@@ -37,7 +37,18 @@ enum
 enum
 {
 	RAINBOW_FULL,
+	RAINBOW_GREY,
+	RAINBOW_FLAME,
+	NUM_RAINBOWS
 };
+
+struct CRainbowOption
+{
+	int m_Rainbow;
+	const char* m_pName;
+};
+
+extern const CRainbowOption RAINBOW_OPTIONS[];
 
 class CCharacter : public CEntity
 {
