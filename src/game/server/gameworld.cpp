@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 #include <engine/shared/config.h>
+#include <game/server/entities/flag.h>
 
 //////////////////////////////////////////////////
 // game world
@@ -75,6 +76,11 @@ void CGameWorld::InsertEntity(CEntity *pEnt)
 	pEnt->m_pNextTypeEntity = m_apFirstEntityTypes[pEnt->m_ObjType];
 	pEnt->m_pPrevTypeEntity = 0x0;
 	m_apFirstEntityTypes[pEnt->m_ObjType] = pEnt;
+
+	if (pEnt->m_ObjType == ENTTYPE_FLAG) {
+		CFlag* pFlag = (CFlag*) pEnt;
+		m_Core.m_apFlags[pFlag->m_Team] = &pFlag->m_Core;
+	}
 }
 
 void CGameWorld::DestroyEntity(CEntity *pEnt)
@@ -102,6 +108,11 @@ void CGameWorld::RemoveEntity(CEntity *pEnt)
 
 	pEnt->m_pNextTypeEntity = 0;
 	pEnt->m_pPrevTypeEntity = 0;
+
+	if (pEnt->m_ObjType == ENTTYPE_FLAG) {
+		CFlag* pFlag = (CFlag*) pEnt;
+		m_Core.m_apFlags[pFlag->m_Team] = 0;
+	}
 }
 
 //

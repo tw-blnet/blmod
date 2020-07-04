@@ -205,6 +205,7 @@ public:
 
 	CTuningParams m_Tuning[2];
 	class CCharacterCore *m_apCharacters[MAX_CLIENTS];
+	class CFlagCore *m_apFlags[2] = {0};
 	CPrng *m_pPrng;
 };
 
@@ -226,6 +227,7 @@ public:
 	int m_HookTick;
 	int m_HookState;
 	int m_HookedPlayer;
+	int m_HookedFlag;
 	int m_ActiveWeapon;
 
 	bool m_NewHook;
@@ -284,6 +286,21 @@ private:
 	CTeamsCore *m_pTeams;
 	int m_MoveRestrictions;
 	static bool IsSwitchActiveCb(int Number, void *pUser);
+};
+
+class CFlagCore
+{
+	friend class CFlag;
+
+public:
+	static const int ms_PhysSize = 14;
+
+	CCharacterCore *m_pCarryingCharacterCore;
+	const int m_Team;
+	vec2 m_Pos;
+	vec2 m_Vel;
+
+	CFlagCore(int m_Team) : m_Team(m_Team) {}
 };
 
 //input count

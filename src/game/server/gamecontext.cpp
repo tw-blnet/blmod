@@ -18,6 +18,7 @@
 #include <game/version.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
+#include <game/server/entities/flag.h>
 
 #include <game/generated/protocol7.h>
 #include <game/generated/protocolglue.h>
@@ -1094,7 +1095,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	{
 		{
 			protocol7::CNetMsg_Sv_GameInfo Msg;
-			Msg.m_GameFlags = protocol7::GAMEFLAG_RACE;
+			Msg.m_GameFlags = protocol7::GAMEFLAG_RACE|protocol7::GAMEFLAG_FLAGS;
 			Msg.m_MatchCurrent = 1;
 			Msg.m_MatchNum = 0;
 			Msg.m_ScoreLimit = 0;
@@ -2214,6 +2215,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			CCharacter *pChr = pPlayer->GetCharacter();
 			if(!pChr)
 				return;
+
+			bool Result = m_pController->TryKill(pChr);
+			if (!Result) {
+				return;
+			}
 
 			//Kill Protection
 			int CurrTime = (Server()->Tick() - pChr->m_StartTime) / Server()->TickSpeed();

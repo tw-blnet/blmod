@@ -5,6 +5,7 @@
 
 #include <base/vmath.h>
 #include <engine/map.h>
+#include <game/server/entities/flag.h>
 
 class CDoor;
 #if !defined(_MSC_VER) || _MSC_VER >= 1600
@@ -71,6 +72,8 @@ protected:
 
 public:
 	const char *m_pGameType;
+
+	CFlag* m_apFlags[2] = {0};
 
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();
@@ -143,6 +146,8 @@ public:
 	int ClampTeam(int Team);
 
 	virtual void PostReset();
+
+	bool TryKill(class CCharacter *pChr);
 
 	// DDRace
 

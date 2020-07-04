@@ -95,6 +95,7 @@ void CCharacterCore::Reset()
 	m_HookTick = 0;
 	m_HookState = HOOK_IDLE;
 	m_HookedPlayer = -1;
+	m_HookedFlag = -1;
 	m_Jumped = 0;
 	m_JumpedTotal = 0;
 	m_Jumps = 2;
@@ -192,6 +193,7 @@ void CCharacterCore::Tick(bool UseInput)
 				m_HookPos = m_Pos+TargetDirection*PhysSize*1.5f;
 				m_HookDir = TargetDirection;
 				m_HookedPlayer = -1;
+				m_HookedFlag = -1;
 				m_HookTick = SERVER_TICK_SPEED * (1.25f - m_pWorld->m_Tuning[g_Config.m_ClDummy].m_HookDuration);
 				m_TriggeredEvents |= COREEVENT_HOOK_LAUNCH;
 			}
@@ -199,6 +201,7 @@ void CCharacterCore::Tick(bool UseInput)
 		else
 		{
 			m_HookedPlayer = -1;
+			m_HookedFlag = -1;
 			m_HookState = HOOK_IDLE;
 			m_HookPos = m_Pos;
 		}
@@ -225,6 +228,7 @@ void CCharacterCore::Tick(bool UseInput)
 	if(m_HookState == HOOK_IDLE)
 	{
 		m_HookedPlayer = -1;
+		m_HookedFlag = -1;
 		m_HookState = HOOK_IDLE;
 		m_HookPos = m_Pos;
 	}
@@ -293,6 +297,35 @@ void CCharacterCore::Tick(bool UseInput)
 			}
 		}
 
+		// Check against flags
+		if(this->m_Hook && m_pWorld && m_HookedPlayer == -1)
+		{
+			float Distance = 0.0f;
+
+			for(int i = 0; i < 2; i++)
+			{
+				CFlagCore* pFlag = m_pWorld->m_apFlags[i];
+				if(!pFlag || pFlag->m_pCarryingCharacterCore)
+					continue;
+
+				vec2 ClosestPoint = closest_point_on_line(m_HookPos, NewPos, pFlag->m_Pos);
+				vec2 FlagAdjPos = pFlag->m_Pos;
+				FlagAdjPos.y -= CFlagCore::ms_PhysSize / 2; // move center higher
+				if(distance(FlagAdjPos, ClosestPoint) < CFlagCore::ms_PhysSize * 3) // fit to texture
+				{
+					if (m_HookedPlayer == -1 || distance(m_HookPos, pFlag->m_Pos) < Distance)
+					{
+						m_HookState = HOOK_GRABBED;
+						m_HookedFlag = pFlag->m_Team;
+						Distance = distance(m_HookPos, pFlag->m_Pos);
+					}
+				}
+			}
+
+			if (Distance)
+				m_HookPos = m_pWorld->m_apFlags[m_HookedFlag]->m_Pos;
+		}
+
 		if(m_HookState == HOOK_FLYING)
 		{
 			// check against ground
@@ -311,6 +344,7 @@ void CCharacterCore::Tick(bool UseInput)
 			{
 				m_TriggeredEvents = 0;
 				m_HookedPlayer = -1;
+				m_HookedFlag = -1;
 
 				m_NewHook = true;
 				int RandomOut = m_pWorld->RandomOr0((*m_pTeleOuts)[teleNr-1].size());
@@ -346,7 +380,7 @@ void CCharacterCore::Tick(bool UseInput)
 		}
 
 		// don't do this hook rutine when we are hook to a player
-		if(m_HookedPlayer == -1 && distance(m_HookPos, m_Pos) > 46.0f)
+		if(m_HookedPlayer == -1 && m_HookedFlag == -1 && distance(m_HookPos, m_Pos) > 46.0f)
 		{
 			vec2 HookVel = normalize(m_HookPos-m_Pos)*m_pWorld->m_Tuning[g_Config.m_ClDummy].m_HookDragAccel;
 			// the hook as more power to drag you up then down.
@@ -369,11 +403,51 @@ void CCharacterCore::Tick(bool UseInput)
 
 		}
 
+		if (m_HookedFlag != -1)
+		{
+			if (m_pWorld->m_apFlags[m_HookedFlag])
+			{
+				CFlagCore* pFlag = m_pWorld->m_apFlags[m_HookedFlag];
+
+				if (!pFlag->m_pCarryingCharacterCore)
+				{
+					float Distance = distance(m_Pos, pFlag->m_Pos);
+					vec2 Dir = normalize(m_Pos - pFlag->m_Pos);
+					float Accel = m_pWorld->m_Tuning[g_Config.m_ClDummy].m_HookDragAccel * (Distance/m_pWorld->m_Tuning[g_Config.m_ClDummy].m_HookLength);
+					float DragSpeed = m_pWorld->m_Tuning[g_Config.m_ClDummy].m_HookDragSpeed;
+
+					vec2 Temp;
+					Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, pFlag->m_Vel.x, Accel*Dir.x*1.5f);
+					Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, pFlag->m_Vel.y, Accel*Dir.y*1.5f);
+					pFlag->m_Vel = Temp;
+
+					Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.x, -Accel*Dir.x*0.25f);
+					Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.y, -Accel*Dir.y*0.25f);
+					m_Vel = ClampVel(m_MoveRestrictions, Temp);
+
+					m_HookPos = pFlag->m_Pos;
+				}
+				else
+				{
+					m_HookedFlag = -1;
+					m_HookState = HOOK_RETRACTED;
+					m_HookPos = m_Pos;
+				}
+			}
+			else
+			{
+				m_HookedFlag = -1;
+				m_HookState = HOOK_RETRACTED;
+				m_HookPos = m_Pos;
+			}
+		}
+
 		// release hook (max default hook time is 1.25 s)
 		m_HookTick++;
 		if(m_HookedPlayer != -1 && (m_HookTick > SERVER_TICK_SPEED+SERVER_TICK_SPEED/5 || !m_pWorld->m_apCharacters[m_HookedPlayer]))
 		{
 			m_HookedPlayer = -1;
+			m_HookedFlag = -1;
 			m_HookState = HOOK_RETRACTED;
 			m_HookPos = m_Pos;
 		}

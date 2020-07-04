@@ -1,16 +1,18 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-/*
+
 #include <game/server/gamecontext.h>
 #include "flag.h"
 
 CFlag::CFlag(CGameWorld *pGameWorld, int Team)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FLAG)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_FLAG), m_Core(Team)
 {
 	m_Team = Team;
-	m_ProximityRadius = ms_PhysSize;
+	m_ProximityRadius = m_Core.ms_PhysSize;
 	m_pCarryingCharacter = NULL;
 	m_GrabTick = 0;
+
+	m_Core.m_pCarryingCharacterCore = 0;
 
 	Reset();
 }
@@ -20,8 +22,16 @@ void CFlag::Reset()
 	m_pCarryingCharacter = NULL;
 	m_AtStand = 1;
 	m_Pos = m_StandPos;
-	m_Vel = vec2(0,0);
 	m_GrabTick = 0;
+	m_CarrierFreezedTick = 0;
+
+	m_Core.m_Pos = m_Pos;
+	m_Core.m_Vel = vec2(0,0);
+}
+
+void CFlag::TickDefered()
+{
+	m_Pos = m_Core.m_Pos;
 }
 
 void CFlag::TickPaused()
@@ -44,4 +54,10 @@ void CFlag::Snap(int SnappingClient)
 	pFlag->m_Y = (int)m_Pos.y;
 	pFlag->m_Team = m_Team;
 }
-*/
+
+void CFlag::SetCarryingCharacter(CCharacter *Character)
+{
+	m_CarrierFreezedTick = 0;
+	m_pCarryingCharacter = Character;
+	m_Core.m_pCarryingCharacterCore = Character ? Character->Core() : 0;
+}

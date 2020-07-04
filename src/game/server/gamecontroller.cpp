@@ -15,6 +15,7 @@
 #include "entities/projectile.h"
 #include "entities/plasma.h"
 #include "entities/door.h"
+#include "entities/flag.h"
 #include <game/layers.h>
 
 
@@ -30,7 +31,7 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_SuddenDeath = 0;
 	m_RoundStartTick = Server()->Tick();
 	m_RoundCount = 0;
-	m_GameFlags = 0;
+	m_GameFlags = GAMEFLAG_FLAGS;
 	m_aMapWish[0] = 0;
 
 	m_UnbalancedTick = -1;
@@ -336,6 +337,19 @@ bool IGameController::OnEntity(int Index, vec2 Pos, int Layer, int Flags, int Nu
 		return true;
 	}
 
+	int Team = -1;
+	if(Index == ENTITY_FLAGSTAND_RED) Team = TEAM_RED;
+	if(Index == ENTITY_FLAGSTAND_BLUE) Team = TEAM_BLUE;
+	if(Team != -1 && !m_apFlags[Team]) {
+		CFlag *F = new CFlag(&GameServer()->m_World, Team);
+		F->m_StandPos = Pos;
+		F->m_Core.m_Pos = Pos;
+		GameServer()->m_World.InsertEntity(F);
+		m_apFlags[Team] = F;
+
+		return true;
+	}
+
 	return false;
 }
 
@@ -392,7 +406,26 @@ void IGameController::PostReset()
 
 int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
-	return 0;
+	// int HadFlag = 0;
+
+    // drop flags
+    for(int i = 0; i < 2; i++)
+    {
+        CFlag *F = m_apFlags[i];
+        // if(F && pKiller && pKiller->GetCharacter() && F->m_pCarryingCharacter == pKiller->GetCharacter())
+        //     HadFlag |= 2;
+        if(F && F->GetCarryingCharacter() == pVictim)
+        {
+            F->m_DropTick = Server()->Tick();
+			F->SetCarryingCharacter(0);
+            F->m_Core.m_Vel = vec2(0,0);
+
+            // HadFlag |= 1;
+        }
+    }
+
+    // return HadFlag;
+    return 0;
 }
 
 void IGameController::OnCharacterSpawn(class CCharacter *pChr)
@@ -486,6 +519,96 @@ void IGameController::Tick()
 							Server()->Kick(i, "Kicked for inactivity");
 						}
 					}
+				}
+			}
+		}
+	}
+
+	if(GameServer()->m_World.m_ResetRequested || GameServer()->m_World.m_Paused)
+		return;
+
+	for(int fi = 0; fi < 2; fi++)
+	{
+		CFlag *F = m_apFlags[fi];
+
+		if(!F)
+			continue;
+
+		// flag hits death-tile or left the game layer, reset it
+		if(F->GameLayerClipped(F->m_Pos))
+		{
+			GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "flag_return");
+			F->Reset();
+			continue;
+		}
+
+		if(F->GetCarryingCharacter())
+		{
+			// update flag position
+			F->m_Core.m_Pos = F->GetCarryingCharacter()->m_Pos;
+
+			// drop flag if player freezed too long
+			if (F->GetCarryingCharacter()->m_FreezeTime && !F->m_CarrierFreezedTick)
+			{
+				F->m_CarrierFreezedTick = Server()->Tick();
+			}
+			else if (!F->GetCarryingCharacter()->m_FreezeTime && F->m_CarrierFreezedTick)
+			{
+				F->m_CarrierFreezedTick = 0;
+			}
+
+			if (F->m_CarrierFreezedTick && (Server()->Tick() - F->m_CarrierFreezedTick >= Server()->TickSpeed()*10)) {
+				vec2 dir;
+				dir.x = cos(F->GetCarryingCharacter()->GetCore().m_Angle / 256.f);
+				dir.y = sin(F->GetCarryingCharacter()->GetCore().m_Angle / 256.f);
+
+				F->m_DropTick = Server()->Tick();
+				F->m_Core.m_Vel = dir * 5. + F->GetCarryingCharacter()->Core()->m_Vel;
+				F->SetCarryingCharacter(0);
+			}
+		}
+		else
+		{
+			CCharacter *apCloseCCharacters[MAX_CLIENTS];
+			int Num = GameServer()->m_World.FindEntities(F->m_Pos, CFlagCore::ms_PhysSize, (CEntity**)apCloseCCharacters, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+			for(int i = 0; i < Num; i++)
+			{
+				if(!apCloseCCharacters[i]->IsAlive() || apCloseCCharacters[i]->GetPlayer()->GetTeam() == TEAM_SPECTATORS || GameServer()->Collision()->IntersectLine(F->m_Pos, apCloseCCharacters[i]->m_Pos, NULL, NULL))
+					continue;
+
+				if (!apCloseCCharacters[i]->m_FreezeTime && (!m_apFlags[1-fi]->GetCarryingCharacter() || (m_apFlags[1-fi]->GetCarryingCharacter()->GetPlayer()->GetCID() != apCloseCCharacters[i]->GetPlayer()->GetCID())) && (Server()->Tick() - m_apFlags[fi]->m_DropTick) >= Server()->TickSpeed() / 2)
+				{
+					// take the flag
+					if(F->m_AtStand)
+					{
+						F->m_GrabTick = Server()->Tick();
+					}
+
+					F->m_AtStand = 0;
+					F->SetCarryingCharacter(apCloseCCharacters[i]);
+
+					char aBuf[256];
+					str_format(aBuf, sizeof(aBuf), "flag_grab player='%d:%s'",
+						F->GetCarryingCharacter()->GetPlayer()->GetCID(),
+						Server()->ClientName(F->GetCarryingCharacter()->GetPlayer()->GetCID()));
+					GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+
+					break;
+				}
+			}
+
+			if(!F->GetCarryingCharacter() && !F->m_AtStand)
+			{
+				if(Server()->Tick() > F->m_DropTick + Server()->TickSpeed()*180)
+				{
+					F->Reset();
+				}
+				else
+				{
+					const float resistance = 10. / 50.;
+					F->m_Core.m_Vel.x = sign(F->m_Core.m_Vel.x) * maximum(abs(F->m_Core.m_Vel.x) - resistance, 0.f);
+					F->m_Core.m_Vel.y += GameServer()->m_World.m_Core.m_Tuning->m_Gravity * 1.4;
+					GameServer()->Collision()->MoveBox(&F->m_Core.m_Pos, &F->m_Core.m_Vel, vec2(CFlagCore::ms_PhysSize, CFlagCore::ms_PhysSize), 0.5f);
 				}
 			}
 		}
@@ -584,6 +707,72 @@ void IGameController::Snap(int SnappingClient)
 		pRaceData->m_Precision = 0;
 		pRaceData->m_RaceFlags = protocol7::RACEFLAG_HIDE_KILLMSG | protocol7::RACEFLAG_KEEP_WANTED_WEAPON;
 	}
+
+	if(!Server()->IsSixup(SnappingClient)) {
+		CNetObj_GameData *pGameDataObj = (CNetObj_GameData *)Server()->SnapNewItem(NETOBJTYPE_GAMEDATA, 0, sizeof(CNetObj_GameData));
+		if(!pGameDataObj)
+			return;
+
+		if(m_apFlags[TEAM_RED])
+		{
+			if(m_apFlags[TEAM_RED]->m_AtStand)
+				pGameDataObj->m_FlagCarrierRed = FLAG_ATSTAND;
+			else if(m_apFlags[TEAM_RED]->GetCarryingCharacter() && m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer())
+				pGameDataObj->m_FlagCarrierRed = m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer()->GetCID();
+			else
+				pGameDataObj->m_FlagCarrierRed = FLAG_TAKEN;
+		}
+		else
+			pGameDataObj->m_FlagCarrierRed = FLAG_MISSING;
+
+		if(m_apFlags[TEAM_BLUE])
+		{
+			if(m_apFlags[TEAM_BLUE]->m_AtStand)
+				pGameDataObj->m_FlagCarrierBlue = FLAG_ATSTAND;
+			else if(m_apFlags[TEAM_BLUE]->GetCarryingCharacter() && m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer())
+				pGameDataObj->m_FlagCarrierBlue = m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer()->GetCID();
+			else
+				pGameDataObj->m_FlagCarrierBlue = FLAG_TAKEN;
+		}
+		else
+			pGameDataObj->m_FlagCarrierBlue = FLAG_MISSING;
+	} else {
+		protocol7::CNetObj_GameDataFlag *pGameDataFlag = static_cast<protocol7::CNetObj_GameDataFlag *>(Server()->SnapNewItem(-protocol7::NETOBJTYPE_GAMEDATAFLAG, 0, sizeof(protocol7::CNetObj_GameDataFlag)));
+		if(!pGameDataFlag)
+			return;
+
+		pGameDataFlag->m_FlagDropTickRed = 0;
+		if(m_apFlags[TEAM_RED])
+		{
+			if(m_apFlags[TEAM_RED]->m_AtStand)
+				pGameDataFlag->m_FlagCarrierRed = FLAG_ATSTAND;
+			else if(m_apFlags[TEAM_RED]->GetCarryingCharacter() && m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer())
+				pGameDataFlag->m_FlagCarrierRed = m_apFlags[TEAM_RED]->GetCarryingCharacter()->GetPlayer()->GetCID();
+			else
+			{
+				pGameDataFlag->m_FlagCarrierRed = FLAG_TAKEN;
+				pGameDataFlag->m_FlagDropTickRed = m_apFlags[TEAM_RED]->m_DropTick;
+			}
+		}
+		else
+			pGameDataFlag->m_FlagCarrierRed = FLAG_MISSING;
+
+		pGameDataFlag->m_FlagDropTickBlue = 0;
+		if(m_apFlags[TEAM_BLUE])
+		{
+			if(m_apFlags[TEAM_BLUE]->m_AtStand)
+				pGameDataFlag->m_FlagCarrierBlue = FLAG_ATSTAND;
+			else if(m_apFlags[TEAM_BLUE]->GetCarryingCharacter() && m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer())
+				pGameDataFlag->m_FlagCarrierBlue = m_apFlags[TEAM_BLUE]->GetCarryingCharacter()->GetPlayer()->GetCID();
+			else
+			{
+				pGameDataFlag->m_FlagCarrierBlue = FLAG_TAKEN;
+				pGameDataFlag->m_FlagDropTickBlue = m_apFlags[TEAM_BLUE]->m_DropTick;
+			}
+		}
+		else
+			pGameDataFlag->m_FlagCarrierBlue = FLAG_MISSING;
+	}
 }
 
 int IGameController::GetAutoTeam(int NotThisID)
@@ -634,4 +823,27 @@ int IGameController::ClampTeam(int Team)
 	if(Team < 0)
 		return TEAM_SPECTATORS;
 	return 0;
+}
+
+bool IGameController::TryKill(class CCharacter *pChr)
+{
+	for (int fi = 0; fi < 2; fi++)
+	{
+		CFlag *F = m_apFlags[fi];
+		if (!F)
+			continue;
+
+		if (F->GetCarryingCharacter() && F->GetCarryingCharacter()->GetPlayer()->GetCID() == pChr->GetPlayer()->GetCID()) {
+			vec2 dir;
+			dir.x = cos(pChr->GetCore().m_Angle / 256.f);
+			dir.y = sin(pChr->GetCore().m_Angle / 256.f);
+
+			F->m_DropTick = Server()->Tick();
+			F->m_Core.m_Vel = dir * 5. + pChr->Core()->m_Vel;
+			F->SetCarryingCharacter(0);
+			return false;
+		}
+	}
+
+	return true;
 }
