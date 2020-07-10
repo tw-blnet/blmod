@@ -1886,6 +1886,12 @@ void CCharacter::HandleTiles(int Index)
 		SetRainbow(true);
 	}
 
+	// flag protection
+	if (m_TileIndex == TILE_NOFLAG || m_TileFIndex == TILE_NOFLAG)
+	{
+		GameServer()->m_pController->DropFlag(this);
+	}
+
 	// stopper
 	if(m_Core.m_Vel.y > 0 && (m_MoveRestrictions&CANTMOVE_DOWN))
 	{

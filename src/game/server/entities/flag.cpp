@@ -31,6 +31,17 @@ void CFlag::Reset()
 
 void CFlag::TickDefered()
 {
+	int Index = GameServer()->Collision()->GetMapIndex(m_Core.m_Pos);
+	int m_TileIndex = GameServer()->Collision()->GetTileIndex(Index);
+	int m_TileFIndex = GameServer()->Collision()->GetFTileIndex(Index);
+
+	if (m_TileIndex == TILE_NOFLAG || m_TileFIndex == TILE_NOFLAG)
+	{
+		m_Core.m_Pos = m_Pos;
+		m_Core.m_Vel = vec2(0,0);
+		return;
+	}
+
 	m_Pos = m_Core.m_Pos;
 }
 

@@ -572,6 +572,23 @@ void IGameController::Tick()
 				if(!apCloseCCharacters[i]->IsAlive() || apCloseCCharacters[i]->GetPlayer()->GetTeam() == TEAM_SPECTATORS || GameServer()->Collision()->IntersectLine(F->m_Pos, apCloseCCharacters[i]->m_Pos, NULL, NULL), apCloseCCharacters[i]->Team() != 0)
 					continue;
 
+				bool AllowTake = true;
+				std::list<int> Indices = GameServer()->Collision()->GetMapIndices(F->m_Pos, apCloseCCharacters[i]->m_Pos);
+				for (auto & Index : Indices)
+				{
+					int m_TileIndex = GameServer()->Collision()->GetTileIndex(Index);
+					int m_TileFIndex = GameServer()->Collision()->GetFTileIndex(Index);
+
+					if (m_TileIndex == TILE_NOFLAG || m_TileFIndex == TILE_NOFLAG)
+					{
+						AllowTake = false;
+						break;
+					}
+				}
+
+				if (!AllowTake)
+					continue;
+
 				if (!apCloseCCharacters[i]->m_FreezeTime && (!m_apFlags[1-fi]->GetCarryingCharacter() || (m_apFlags[1-fi]->GetCarryingCharacter()->GetPlayer()->GetCID() != apCloseCCharacters[i]->GetPlayer()->GetCID())) && (Server()->Tick() - m_apFlags[fi]->m_DropTick) >= Server()->TickSpeed() / 2)
 				{
 					// take the flag
