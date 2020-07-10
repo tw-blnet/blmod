@@ -1470,6 +1470,12 @@ void CGameContext::ConArena(IConsole::IResult *pResult, void *pUserData)
 	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
 	CArenasManager *pArenasManager = &pController->m_ArenasManager;
 
+	if (!g_Config.m_SvAllowArenas)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Arenas are currently disabled");
+		return;
+	}
+
 	int Creator = pResult->m_ClientID;
 	int Target = pSelf->GetClientIDByName(pResult->GetString(0));
 
@@ -1488,6 +1494,12 @@ void CGameContext::ConArenaAccept(IConsole::IResult *pResult, void *pUserData)
 	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
 	CArenasManager *pArenasManager = &pController->m_ArenasManager;
 
+	if (!g_Config.m_SvAllowArenas)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Arenas are currently disabled");
+		return;
+	}
+
 	int Target = pResult->m_ClientID;
 	int Creator = pSelf->GetClientIDByName(pResult->GetString(0));;
 
@@ -1505,6 +1517,12 @@ void CGameContext::ConArenaDecline(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
 	CArenasManager *pArenasManager = &pController->m_ArenasManager;
+
+	if (!g_Config.m_SvAllowArenas)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Arenas are currently disabled");
+		return;
+	}
 
 	int Target = pResult->m_ClientID;
 	int Creator = pSelf->GetClientIDByName(pResult->GetString(0));;
