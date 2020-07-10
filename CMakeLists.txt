@@ -1879,6 +1879,8 @@ set_src(ENGINE_SERVER GLOB src/engine/server
   upnp.h
 )
 set_src(GAME_SERVER GLOB_RECURSE src/game/server
+  arenas.cpp
+  arenas.h
   ddracechat.cpp
   ddracechat.h
   ddracecommands.cpp

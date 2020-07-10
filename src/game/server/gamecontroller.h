@@ -5,6 +5,7 @@
 
 #include <base/vmath.h>
 #include <engine/map.h>
+#include <game/server/arenas.h>
 #include <game/server/entities/flag.h>
 
 class CDoor;
@@ -74,6 +75,8 @@ public:
 	const char *m_pGameType;
 
 	CFlag* m_apFlags[2] = {0};
+
+	CArenasManager m_ArenasManager;
 
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();

@@ -457,6 +457,8 @@ void CPlayer::FakeSnap()
 
 void CPlayer::OnDisconnect(const char *pReason)
 {
+	GameServer()->m_pController->m_ArenasManager.HandleLeft(m_ClientID);
+
 	KillCharacter();
 
 	if(Server()->ClientIngame(m_ClientID))
@@ -576,6 +578,10 @@ CCharacter *CPlayer::GetCharacter()
 
 void CPlayer::KillCharacter(int Weapon)
 {
+	bool CanDie = GameServer()->m_pController->m_ArenasManager.HandleDeath(m_ClientID);
+	if(!CanDie)
+		return;
+
 	if(m_pCharacter)
 	{
 		m_pCharacter->Die(m_ClientID, Weapon);
@@ -608,6 +614,12 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	Team = GameServer()->m_pController->ClampTeam(Team);
 	if(m_Team == Team)
 		return;
+
+	if(GameServer()->m_pController->m_ArenasManager.IsClientInFight(m_ClientID))
+	{
+		GameServer()->SendChatTarget(m_ClientID, "You cannot become spectator during fight");
+		return;
+	}
 
 	char aBuf[512];
 	DoChatMsg = false;

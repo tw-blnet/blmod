@@ -1444,3 +1444,76 @@ void CGameContext::ConTopPoints(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Score()->ShowTopPoints(pResult->m_ClientID);
 
 }
+
+int CGameContext::GetClientIDByName(const char* pName)
+{
+	int ClientID = -1;
+
+	if(!pName)
+		return ClientID;
+
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(str_comp(pName, Server()->ClientName(i)) == 0)
+		{
+			ClientID = i;
+			break;
+		}
+	}
+
+	return ClientID;
+}
+
+void CGameContext::ConArena(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
+	CArenasManager *pArenasManager = &pController->m_ArenasManager;
+
+	int Creator = pResult->m_ClientID;
+	int Target = pSelf->GetClientIDByName(pResult->GetString(0));
+
+	if(Target < 0)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Player not found");
+		return;
+	}
+
+	pArenasManager->NewFight(std::vector<int>{Creator, Target}, 5, 0, 0, 0, 0);
+}
+
+void CGameContext::ConArenaAccept(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
+	CArenasManager *pArenasManager = &pController->m_ArenasManager;
+
+	int Target = pResult->m_ClientID;
+	int Creator = pSelf->GetClientIDByName(pResult->GetString(0));;
+
+	if(Creator < 0)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Player not found");
+		return;
+	}
+
+	pArenasManager->AcceptFight(Creator, Target);
+}
+
+void CGameContext::ConArenaDecline(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
+	CArenasManager *pArenasManager = &pController->m_ArenasManager;
+
+	int Target = pResult->m_ClientID;
+	int Creator = pSelf->GetClientIDByName(pResult->GetString(0));;
+
+	if(Creator < 0)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Player not found");
+		return;
+	}
+
+	pArenasManager->DeclineFight(Creator, Target);
+}

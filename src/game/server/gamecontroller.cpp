@@ -19,7 +19,7 @@
 #include <game/layers.h>
 
 
-IGameController::IGameController(class CGameContext *pGameServer)
+IGameController::IGameController(class CGameContext *pGameServer) : m_ArenasManager(pGameServer)
 {
 	m_pGameServer = pGameServer;
 	m_pServer = m_pGameServer->Server();
@@ -609,6 +609,8 @@ void IGameController::Tick()
 			}
 		}
 	}
+
+	m_ArenasManager.Tick();
 }
 
 void IGameController::Snap(int SnappingClient)

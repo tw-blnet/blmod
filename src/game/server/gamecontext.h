@@ -104,6 +104,7 @@ class CGameContext : public IGameServer
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddArena(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
@@ -267,6 +268,8 @@ public:
 	bool PlayerModerating();
 	void ForceVote(int EnforcerID, bool Success);
 
+	int GetClientIDByName(const char *pName);
+
 	// Checks if player can vote and notify them about the reason
 	bool RateLimitPlayerVote(int ClientID);
 	bool RateLimitPlayerMapVote(int ClientID);
@@ -381,6 +384,10 @@ private:
 	static void ConUnFreezeHammer(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConRainbow(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConArena(IConsole::IResult *pResult, void *pUserData);
+	static void ConArenaAccept(IConsole::IResult *pResult, void *pUserData);
+	static void ConArenaDecline(IConsole::IResult *pResult, void *pUserData);
 
 	enum
 	{
