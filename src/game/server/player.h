@@ -101,6 +101,7 @@ public:
 		int m_TargetX;
 		int m_TargetY;
 	} m_LatestActivity;
+	vec2 m_TargetPos;
 
 	// network latency calculations
 	struct

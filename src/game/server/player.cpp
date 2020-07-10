@@ -516,6 +516,8 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 		return; // we must return if kicked, as player struct is already deleted
 	AfkVoteTimer(NewInput);
 
+	m_TargetPos = vec2(NewInput->m_TargetX, NewInput->m_TargetY);
+
 	if(((!m_pCharacter && m_Team == TEAM_SPECTATORS) || m_Paused) && m_SpectatorID == SPEC_FREEVIEW)
 		m_ViewPos = vec2(NewInput->m_TargetX, NewInput->m_TargetY);
 
