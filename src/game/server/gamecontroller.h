@@ -150,7 +150,7 @@ public:
 
 	virtual void PostReset();
 
-	bool TryKill(class CCharacter *pChr);
+	bool DropFlag(class CCharacter *pChr);
 
 	// DDRace
 

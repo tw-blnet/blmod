@@ -823,7 +823,7 @@ int IGameController::ClampTeam(int Team)
 	return 0;
 }
 
-bool IGameController::TryKill(class CCharacter *pChr)
+bool IGameController::DropFlag(class CCharacter *pChr)
 {
 	for (int fi = 0; fi < 2; fi++)
 	{
@@ -839,9 +839,9 @@ bool IGameController::TryKill(class CCharacter *pChr)
 			F->m_DropTick = Server()->Tick();
 			F->m_Core.m_Vel = dir * 5. + pChr->Core()->m_Vel;
 			F->SetCarryingCharacter(0);
-			return false;
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
