@@ -43,6 +43,14 @@ void CFlag::TickPaused()
 
 void CFlag::Snap(int SnappingClient)
 {
+	int Team = 0;
+	if(m_pCarryingCharacter)
+		Team = m_pCarryingCharacter->Team();
+
+	CPlayer *pPlayer = m_pGameWorld->GameServer()->m_apPlayers[SnappingClient];
+	if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->Team() != Team && !pPlayer->IsPaused())
+		return;
+
 	if(NetworkClipped(SnappingClient))
 		return;
 

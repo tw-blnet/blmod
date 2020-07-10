@@ -308,6 +308,9 @@ void CCharacterCore::Tick(bool UseInput)
 				if(!pFlag || pFlag->m_pCarryingCharacterCore)
 					continue;
 
+				if(m_pTeams->GetSolo(m_Id) || m_pTeams->Team(m_Id) != 0)
+					continue;
+
 				vec2 ClosestPoint = closest_point_on_line(m_HookPos, NewPos, pFlag->m_Pos);
 				vec2 FlagAdjPos = pFlag->m_Pos;
 				FlagAdjPos.y -= CFlagCore::ms_PhysSize / 2; // move center higher

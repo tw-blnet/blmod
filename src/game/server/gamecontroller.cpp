@@ -569,7 +569,7 @@ void IGameController::Tick()
 			int Num = GameServer()->m_World.FindEntities(F->m_Pos, CFlagCore::ms_PhysSize, (CEntity**)apCloseCCharacters, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 			for(int i = 0; i < Num; i++)
 			{
-				if(!apCloseCCharacters[i]->IsAlive() || apCloseCCharacters[i]->GetPlayer()->GetTeam() == TEAM_SPECTATORS || GameServer()->Collision()->IntersectLine(F->m_Pos, apCloseCCharacters[i]->m_Pos, NULL, NULL))
+				if(!apCloseCCharacters[i]->IsAlive() || apCloseCCharacters[i]->GetPlayer()->GetTeam() == TEAM_SPECTATORS || GameServer()->Collision()->IntersectLine(F->m_Pos, apCloseCCharacters[i]->m_Pos, NULL, NULL), apCloseCCharacters[i]->Team() != 0)
 					continue;
 
 				if (!apCloseCCharacters[i]->m_FreezeTime && (!m_apFlags[1-fi]->GetCarryingCharacter() || (m_apFlags[1-fi]->GetCarryingCharacter()->GetPlayer()->GetCID() != apCloseCCharacters[i]->GetPlayer()->GetCID())) && (Server()->Tick() - m_apFlags[fi]->m_DropTick) >= Server()->TickSpeed() / 2)
