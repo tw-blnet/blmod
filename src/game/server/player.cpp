@@ -343,8 +343,6 @@ void CPlayer::Snap(int SnappingClient)
 
 		if(m_ClientID == SnappingClient && m_Paused == PAUSE_PAUSED && ClientVersion < VERSION_DDNET_OLD)
 			pPlayerInfo->m_Team = TEAM_SPECTATORS;
-
-		pPlayerInfo->m_Team = minimum(pPlayerInfo->m_Team, 0);
 	}
 	else
 	{

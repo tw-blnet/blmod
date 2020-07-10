@@ -428,7 +428,7 @@ int64_t CGameTeams::TeamMask(int Team, int ExceptID, int Asker)
 
 void CGameTeams::SendTeamsState(int ClientID)
 {
-	if (g_Config.m_SvTeam == 3)
+	if (g_Config.m_SvTeam == 3 || !g_Config.m_SvSnapTeams)
 		return;
 
 	if (!m_pGameContext->m_apPlayers[ClientID] || m_pGameContext->m_apPlayers[ClientID]->GetClientVersion() <= VERSION_DDRACE)
@@ -437,7 +437,7 @@ void CGameTeams::SendTeamsState(int ClientID)
 	CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 
 	for(unsigned i = 0; i < MAX_CLIENTS; i++)
-		Msg.AddInt( minimum(m_Core.Team(i), 0) );
+		Msg.AddInt(m_Core.Team(i));
 
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
