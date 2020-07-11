@@ -7,7 +7,7 @@ CArenasManager::CArenasManager(class CGameContext *pGameServer) : m_pGameContext
 
 void CArenasManager::Tick()
 {
-	if (m_pGameContext->Server()->Tick() % 5 == 0)
+	if (m_pGameContext->Server()->Tick() % 5 != 0)
 		return;
 
 	for (auto & fight : m_aFights)
