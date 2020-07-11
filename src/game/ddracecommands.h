@@ -58,4 +58,5 @@ CONSOLE_COMMAND("freezehammer", "v[id]", CFGFLAG_SERVER|CMDFLAG_TEST, ConFreezeH
 CONSOLE_COMMAND("unfreezehammer", "v[id]", CFGFLAG_SERVER|CMDFLAG_TEST, ConUnFreezeHammer, this, "Removes Freeze Hammer from a player")
 
 CONSOLE_COMMAND("rainbow", "v[id] ?s[option]", CFGFLAG_SERVER, ConRainbow, this, "Gives a player rainbow (or remove if option is empty)");
+CONSOLE_COMMAND("skinchanger", "v[id] i[value]", CFGFLAG_SERVER, ConSkinChanger, this, "Sets whether player has skin changer");
 #undef CONSOLE_COMMAND

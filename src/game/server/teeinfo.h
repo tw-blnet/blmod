@@ -1,6 +1,17 @@
 #ifndef GAME_SERVER_TEEINFO_H
 #define GAME_SERVER_TEEINFO_H
 
+struct StdSkin
+{
+	char m_SkinName[64];
+	char m_apSkinPartNames[6][24];
+	bool m_aUseCustomColors[6];
+	int m_aSkinPartColors[6];
+};
+
+extern StdSkin g_StdSkins[];
+extern size_t g_StdSkinsCount;
+
 class CTeeInfo
 {
 public:

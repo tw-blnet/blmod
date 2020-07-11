@@ -203,11 +203,16 @@ private:
 	bool m_Rainbow;
 	int m_RainbowMode = RAINBOW_FULL;
 
+	bool m_SkinChanger;
+
 	struct
 	{
+    	char m_SkinName[64] = {'\0'};
 		int m_UseCustomColor;
 		int m_ColorBody;
 		int m_ColorFeet;
+
+    	char m_apSkinPartNames[6][24] = {"", "", "", "", "", ""};
 		bool m_aUseCustomColors[6];
 		int m_aSkinPartColors[6];
 	} m_RealColors;
@@ -308,6 +313,8 @@ public:
 
 	void SetRainbow(bool Value);
 	void SetRainbowMode(int Mode);
+
+	void SetSkinChanger(bool Value);
 };
 
 enum

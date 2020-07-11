@@ -4,15 +4,7 @@
 
 #include "teeinfo.h"
 
-struct StdSkin
-{
-	char m_SkinName[64];
-	char m_apSkinPartNames[6][24];
-	bool m_aUseCustomColors[6];
-	int m_aSkinPartColors[6];
-};
-
-static StdSkin g_StdSkins[] = {
+StdSkin g_StdSkins[] = {
 {"default",{"standard","","","standard","standard","standard"},{true,false,false,true,true,false},{1798004,0,0,1799582,1869630,0}},
 {"bluekitty",{"kitty","whisker","","standard","standard","standard"},{true,true,false,true,true,false},{8681144,-8229413,0,7885547,7885547,0}},
 {"bluestripe",{"standard","stripes","","standard","standard","standard"},{true,false,false,true,true,false},{10187898,0,0,750848,1944919,0}},
@@ -29,6 +21,8 @@ static StdSkin g_StdSkins[] = {
 {"twinbop",{"standard","duodonny","twinbopp","standard","standard","standard"},{true,true,true,true,true,false},{15310519,-1600806,15310519,15310519,37600,0}},
 {"twintri",{"standard","twintri","","standard","standard","standard"},{true,true,false,true,true,false},{3447932,-14098717,0,185,9634888,0}},
 {"warpaint",{"standard","warpaint","","standard","standard","standard"},{true,false,false,true,true,false},{1944919,0,0,750337,1944919,0}}};
+
+size_t g_StdSkinsCount = sizeof(g_StdSkins) / sizeof(StdSkin);
 
 CTeeInfo::CTeeInfo(const char *pSkinName, int UseCustomColor, int ColorBody, int ColorFeet)
 {

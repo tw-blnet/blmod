@@ -788,3 +788,20 @@ void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)
 		pChr->SetRainbow(false);
 	}
 }
+
+void CGameContext::ConSkinChanger(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int Target = pResult->GetVictim();
+
+	if(Target < 0 || Target > MAX_CLIENTS)
+		return;
+
+	bool EnableSkinChanger = pResult->GetInteger(1);
+
+	CCharacter* pChr = pSelf->GetPlayerChar(Target);
+	if (!pChr)
+		return;
+
+	pChr->SetSkinChanger(EnableSkinChanger);
+}

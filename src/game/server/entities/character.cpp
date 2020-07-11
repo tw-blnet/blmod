@@ -769,6 +769,17 @@ void CCharacter::Tick()
 		m_EmoteStop = -1;
 	}
 
+	if (m_SkinChanger)
+	{
+		if (Server()->Tick() % 3 == 0)
+		{
+			int SkinIndex = (Server()->Tick() / 3) % g_StdSkinsCount;
+			str_copy(m_pPlayer->m_TeeInfos.m_SkinName, g_StdSkins[SkinIndex].m_SkinName, sizeof(m_pPlayer->m_TeeInfos.m_SkinName));
+		}
+
+		m_pPlayer->m_TeeInfos.ToSixup();
+	}
+
 	if (m_Rainbow)
 	{
 		m_pPlayer->m_TeeInfos.m_UseCustomColor = true;
@@ -1020,6 +1031,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_Solo = false;
 
 	SetRainbow(false);
+	SetSkinChanger(false);
 
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
@@ -1267,7 +1279,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID)
 		// msg to update skin for 0.7 player
 		if (!m_SkinCaching.m_aSkipCounter[SnappingClient])
 		{
-			const unsigned long hash = GetPlayer()->m_TeeInfos.colorHash();
+			const unsigned long hash = GetPlayer()->m_TeeInfos.fullHash();
 			if (m_SkinCaching.m_aColorHashes[SnappingClient] != hash)
 			{
 				m_SkinCaching.m_aColorHashes[SnappingClient] = hash;
@@ -2575,4 +2587,33 @@ void CCharacter::SetRainbow(bool Value)
 void CCharacter::SetRainbowMode(int Mode)
 {
 	m_RainbowMode = Mode;
+}
+
+void CCharacter::SetSkinChanger(bool Value)
+{
+	if (m_SkinChanger == Value)
+		return;
+
+	if (Value)
+	{
+		m_SkinChanger = true;
+
+		str_copy(m_RealColors.m_SkinName, GetPlayer()->m_TeeInfos.m_SkinName, sizeof(m_RealColors.m_SkinName));
+
+		for (int i = 0; i < 6; i++)
+		{
+			str_copy(m_RealColors.m_apSkinPartNames[i], GetPlayer()->m_TeeInfos.m_apSkinPartNames[i], 24);
+		}
+	}
+	else
+	{
+		m_SkinChanger = false;
+
+		str_copy(GetPlayer()->m_TeeInfos.m_SkinName, m_RealColors.m_SkinName, sizeof(m_RealColors.m_SkinName));
+
+		for (int i = 0; i < 6; i++)
+		{
+			str_copy(GetPlayer()->m_TeeInfos.m_apSkinPartNames[i], m_RealColors.m_apSkinPartNames[i], 24);
+		}
+	}
 }
