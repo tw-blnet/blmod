@@ -883,7 +883,7 @@ void CCharacter::Tick()
 				if (distance(m_Pos, Pos) < 32)
 					continue;
 
-				m_pGameWorld->GameServer()->CreateDeath(Pos, m_pPlayer->GetCID());
+				GameServer()->CreateDeath(Pos, m_pPlayer->GetCID(), Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
 			}
 		}
 	}
