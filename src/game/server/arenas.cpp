@@ -445,6 +445,8 @@ void CArenasManager::HandleLeft(int ClientID)
 	bool Continue = false;
 
 	do {
+		Continue = false;
+
 		for (auto & FightPair : m_aFights)
 		{
 			auto & Participants = FightPair.second.m_aParticipants;
