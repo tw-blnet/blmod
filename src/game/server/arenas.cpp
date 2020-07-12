@@ -12,6 +12,9 @@ void CArenasManager::Tick()
 
 	for (auto & fight : m_aFights)
 	{
+		if (fight.second.m_MatchStartTick >= 0)
+			continue;
+
 		int CreatorID = -1;
 		for (auto & participant : fight.second.m_aParticipants)
 		{
@@ -439,27 +442,34 @@ bool CArenasManager::HandleDeath(int ClientID)
 
 void CArenasManager::HandleLeft(int ClientID)
 {
-	for (size_t Fight = 0; Fight < m_aFights.size(); Fight++)
-	{
-		auto & Participants = m_aFights[Fight].m_aParticipants;
+	bool Continue = false;
 
-		auto iter = std::find_if(Participants.begin(), Participants.end(), [ClientID](CParticipant & Participant)
+	do {
+		for (auto & FightPair : m_aFights)
 		{
-			return Participant.m_ClientID == ClientID;
-		});
+			auto & Participants = FightPair.second.m_aParticipants;
 
-		if (iter == Participants.end() || iter->m_Status == PARTICIPANT_DECLINED)
-			continue;
+			auto iter = std::find_if(Participants.begin(), Participants.end(), [ClientID](CParticipant & Participant)
+			{
+				return Participant.m_ClientID == ClientID;
+			});
 
-		if(iter->m_pSaveTee)
-			delete iter->m_pSaveTee;
-		Participants.erase(iter);
+			if (iter == Participants.end() || iter->m_Status == PARTICIPANT_DECLINED)
+				continue;
 
-		if (Participants.size() < 2)
-			EndFight(Fight);
-		else
-			TryStart(Fight);
-	}
+			if (iter->m_pSaveTee)
+				delete iter->m_pSaveTee;
+			Participants.erase(iter);
+
+			if (Participants.size() < 2)
+				EndFight(FightPair.first);
+			else
+				TryStart(FightPair.first);
+
+			Continue = true;
+			break;
+		}
+	} while (Continue);
 }
 
 void CArenasManager::Respawn(int Fight)
