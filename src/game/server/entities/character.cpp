@@ -17,9 +17,12 @@
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS)
 
 const CRainbowOption RAINBOW_OPTIONS[] = {
-	{RAINBOW_FULL, "default"},
-	{RAINBOW_GREY, "grey"},
-	{RAINBOW_FLAME, "flame"},
+	{RAINBOW_FULL,      "default"},
+	{RAINBOW_GREY,      "grey"},
+	{RAINBOW_FLAME,     "flame"},
+	{RAINBOW_ICE,       "ice"},
+	{RAINBOW_FLAG_RED,  "flag_red"},
+	{RAINBOW_FLAG_BLUE, "flag_blue"},
 };
 
 // Character, "physical" player's part
@@ -803,9 +806,10 @@ void CCharacter::Tick()
 			}
 
 			case RAINBOW_FLAME:
+			case RAINBOW_ICE:
 			{
-				const int RAINBOW_FLAME_MIN = 0;
-				const int RAINBOW_FLAME_MAX = 30;
+				const int RAINBOW_MIN = m_RainbowMode == RAINBOW_FLAME ? 0 : 128;
+				const int RAINBOW_MAX = m_RainbowMode == RAINBOW_FLAME ? 30 : 170;
 				const int FEET_OFFSET = 13;
 
 				auto Calc = [](int ServerTick, int Min, int Max)
@@ -813,19 +817,34 @@ void CCharacter::Tick()
 						const int Range = Max - Min;
 						const int Tick = ServerTick % (2 * Range);
 						const int State = Tick >= Range;
-						const int Color = State ? (2 * Range - Tick) : Tick;
+						const int Color = Min + (State ? (2 * Range - 1 - Tick) : Tick);
 						return Color;
 				};
 
 				m_pPlayer->m_TeeInfos.m_ColorBody =
 						(
-							Calc(Server()->Tick(), RAINBOW_FLAME_MIN, RAINBOW_FLAME_MAX) << 0x10
+							Calc(Server()->Tick(), RAINBOW_MIN, RAINBOW_MAX) << 0x10
 						) | 0xFF00;
 
 				m_pPlayer->m_TeeInfos.m_ColorFeet =
 						(
-							Calc(Server()->Tick() + FEET_OFFSET, RAINBOW_FLAME_MIN, RAINBOW_FLAME_MAX) << 0x10
+							Calc(Server()->Tick() + FEET_OFFSET, RAINBOW_MIN, RAINBOW_MAX) << 0x10
 						) | 0xFF00;
+				break;
+			}
+
+			case RAINBOW_FLAG_RED:
+			case RAINBOW_FLAG_BLUE:
+			{
+				const int Range = 0xC0;
+
+				const int Tick = (Server()->Tick() * 8) % (Range * 2);
+				const int State = Tick >= Range;
+				const int Value = State ? (Range * 2 - 1) - Tick : Tick;
+				const int Color = Value | (m_RainbowMode == RAINBOW_FLAG_RED ? 0x00FF00 : 0xA6FF00);
+
+				m_pPlayer->m_TeeInfos.m_ColorBody = Color;
+				m_pPlayer->m_TeeInfos.m_ColorFeet = Color;
 				break;
 			}
 		}
@@ -843,6 +862,30 @@ void CCharacter::Tick()
 		m_pPlayer->m_TeeInfos.m_aSkinPartColors[3] = colorFeet; // hands
 		m_pPlayer->m_TeeInfos.m_aSkinPartColors[4] = colorFeet; // feet
 		m_pPlayer->m_TeeInfos.m_aSkinPartColors[5] = colorBody; // eyes
+	}
+
+	if (m_Alive && m_Tail)
+	{
+		const int TAIL_COUNT = 3;
+		const int TAIL_GAP = 8;
+
+		if (Server()->Tick() % TAIL_GAP == 0)
+		{
+			if (m_TailPos.size() > TAIL_COUNT)
+				m_TailPos.pop_front();
+			m_TailPos.push_back(m_Pos);
+		}
+
+		if (Server()->Tick() % 4 == 0)
+		{
+			for (vec2 Pos : m_TailPos)
+			{
+				if (distance(m_Pos, Pos) < 32)
+					continue;
+
+				m_pGameWorld->GameServer()->CreateDeath(Pos, m_pPlayer->GetCID());
+			}
+		}
 	}
 
 	DDRaceTick();
@@ -1893,7 +1936,7 @@ void CCharacter::HandleTiles(int Index)
 	}
 
 	// rainbow
-	if (m_TileIndex == TILE_RAINBOW && !m_Rainbow)
+	if (m_TileIndex == TILE_RAINBOW)
 	{
 		SetRainbow(true);
 	}
@@ -2552,7 +2595,11 @@ void CCharacter::Rescue()
 void CCharacter::SetRainbow(bool Value)
 {
 	if (m_Rainbow == Value)
+	{
+		if (Value && m_PrevRainbow == false)
+			m_PrevRainbow = true;
 		return;
+	}
 
 	if (Value)
 	{
@@ -2616,4 +2663,28 @@ void CCharacter::SetSkinChanger(bool Value)
 			str_copy(GetPlayer()->m_TeeInfos.m_apSkinPartNames[i], m_RealColors.m_apSkinPartNames[i], 24);
 		}
 	}
+}
+
+void CCharacter::SetTail(bool Value)
+{
+	m_Tail = Value;
+}
+
+void CCharacter::OnFlagPickup(int Color)
+{
+	m_PrevRainbow = m_Rainbow;
+	m_PrevRainbowMode = m_RainbowMode;
+
+	if (!m_Rainbow)
+		SetRainbow(true);
+
+	SetRainbowMode(RAINBOW_FLAG_RED + Color);
+	SetTail(true);
+}
+
+void CCharacter::OnFlagDrop(int Color)
+{
+	SetRainbow(m_PrevRainbow);
+	SetRainbowMode(m_PrevRainbowMode);
+	SetTail(false);
 }

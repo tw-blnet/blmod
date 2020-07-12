@@ -385,6 +385,7 @@ private:
 
 	static void ConRainbow(IConsole::IResult *pResult, void *pUserData);
 	static void ConSkinChanger(IConsole::IResult *pResult, void *pUserData);
+	static void ConTail(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConArena(IConsole::IResult *pResult, void *pUserData);
 	static void ConArenaAccept(IConsole::IResult *pResult, void *pUserData);

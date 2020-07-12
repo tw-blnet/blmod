@@ -11,6 +11,8 @@
 
 #include <game/gamecore.h>
 
+#include <list>
+
 class CAntibot;
 class CGameTeams;
 class CSaveTee;
@@ -39,6 +41,9 @@ enum
 	RAINBOW_FULL,
 	RAINBOW_GREY,
 	RAINBOW_FLAME,
+	RAINBOW_ICE,
+	RAINBOW_FLAG_RED,
+	RAINBOW_FLAG_BLUE,
 	NUM_RAINBOWS
 };
 
@@ -223,6 +228,13 @@ private:
 		unsigned long m_aColorHashes[MAX_CLIENTS];
 	} m_SkinCaching;
 
+	// used for flag rainbow
+	bool m_PrevRainbow;
+	int m_PrevRainbowMode = RAINBOW_FULL;
+
+	bool m_Tail;
+	std::list<vec2> m_TailPos;
+
 public:
 	CGameTeams* Teams();
 	void FillAntibot(CAntibotCharacterData *pData);
@@ -315,6 +327,11 @@ public:
 	void SetRainbowMode(int Mode);
 
 	void SetSkinChanger(bool Value);
+
+	void SetTail(bool Value);
+
+	void OnFlagPickup(int Color);
+	void OnFlagDrop(int Color);
 };
 
 enum

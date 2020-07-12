@@ -406,17 +406,7 @@ void IGameController::PostReset()
 
 int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
-    // drop flags
-    for(int i = 0; i < 2; i++)
-    {
-        CFlag *F = m_apFlags[i];
-        if(F && F->GetCarryingCharacter() == pVictim)
-        {
-            F->m_DropTick = Server()->Tick();
-			F->SetCarryingCharacter(0);
-            F->m_Core.m_Vel = vec2(0,0);
-        }
-    }
+	DropFlag(pVictim);
 
     return 0;
 }
@@ -554,13 +544,7 @@ void IGameController::Tick()
 			}
 
 			if (F->m_CarrierFreezedTick && (Server()->Tick() - F->m_CarrierFreezedTick >= Server()->TickSpeed()*10)) {
-				vec2 dir;
-				dir.x = cos(F->GetCarryingCharacter()->GetCore().m_Angle / 256.f);
-				dir.y = sin(F->GetCarryingCharacter()->GetCore().m_Angle / 256.f);
-
-				F->m_DropTick = Server()->Tick();
-				F->m_Core.m_Vel = dir * 5. + F->GetCarryingCharacter()->Core()->m_Vel;
-				F->SetCarryingCharacter(0);
+				DropFlag(F->GetCarryingCharacter());
 			}
 		}
 		else
@@ -599,6 +583,7 @@ void IGameController::Tick()
 
 					F->SetAtStand(0);
 					F->SetCarryingCharacter(apCloseCCharacters[i]);
+					apCloseCCharacters[i]->OnFlagPickup(fi);
 
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "flag_grab player='%d:%s'",
@@ -849,6 +834,8 @@ bool IGameController::DropFlag(class CCharacter *pChr)
 			continue;
 
 		if (F->GetCarryingCharacter() && F->GetCarryingCharacter()->GetPlayer()->GetCID() == pChr->GetPlayer()->GetCID()) {
+			F->GetCarryingCharacter()->OnFlagDrop(fi);
+
 			vec2 dir;
 			dir.x = cos(pChr->GetCore().m_Angle / 256.f);
 			dir.y = sin(pChr->GetCore().m_Angle / 256.f);

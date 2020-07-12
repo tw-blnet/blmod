@@ -805,3 +805,20 @@ void CGameContext::ConSkinChanger(IConsole::IResult *pResult, void *pUserData)
 
 	pChr->SetSkinChanger(EnableSkinChanger);
 }
+
+void CGameContext::ConTail(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int Target = pResult->GetVictim();
+
+	if(Target < 0 || Target > MAX_CLIENTS)
+		return;
+
+	bool EnableTail = pResult->GetInteger(1);
+
+	CCharacter* pChr = pSelf->GetPlayerChar(Target);
+	if (!pChr)
+		return;
+
+	pChr->SetTail(EnableTail);
+}
