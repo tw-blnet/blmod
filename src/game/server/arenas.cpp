@@ -192,14 +192,26 @@ void CArenasManager::EndFight(int Fight)
 	bool Started = m_aFights[Fight].m_MatchStartTick >= 0;
 
 	if (Started)
+	{
+		pFight->m_MatchStartTick = -1; // deactivate death handler
+
 		for (auto & participant : m_aFights[Fight].m_aParticipants)
 		{
+			CCharacter *pChr = m_pGameContext->GetPlayerChar(participant.m_ClientID);
+			if (!pChr)
+				continue;
+
 			if (participant.m_pSaveTee)
 			{
-				participant.m_pSaveTee->load(m_pGameContext->GetPlayerChar(participant.m_ClientID), 0);
+				participant.m_pSaveTee->load(pChr, 0);
 				delete participant.m_pSaveTee;
 			}
+			else
+			{
+				pChr->Die(participant.m_ClientID, WEAPON_WORLD);
+			}
 		}
+	}
 
 	m_aFights.erase(m_aFights.find(Fight));
 }
@@ -380,8 +392,12 @@ bool CArenasManager::TryStart(int Fight)
 
 	for (auto & participant : pFight->m_aParticipants)
 	{
+		CCharacter *pChr = m_pGameContext->GetPlayerChar(participant.m_ClientID);
+		if (!pChr)
+			continue;
+
 		participant.m_pSaveTee = new CSaveTee;
-		participant.m_pSaveTee->save(m_pGameContext->GetPlayerChar(participant.m_ClientID));
+		participant.m_pSaveTee->save(pChr);
 	}
 
 	Respawn(Fight);
