@@ -62,4 +62,9 @@ CHAT_COMMAND("1vs1", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArena, th
 CHAT_COMMAND("accept", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArenaAccept, this, "Accept fight invitation")
 CHAT_COMMAND("decline", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArenaDecline, this, "Decline fight invitation")
 
+CHAT_COMMAND("register", "s[login] r[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConRegister, this, "Register new account")
+CHAT_COMMAND("login", "s[login] r[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConLogin, this, "Login to account")
+CHAT_COMMAND("change_password", "s[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConChangePassword, this, "Change your account password")
+CHAT_COMMAND("logout", "", CFGFLAG_CHAT|CFGFLAG_SERVER, ConLogout, this, "Log out of your account")
+
 #undef CHAT_COMMAND

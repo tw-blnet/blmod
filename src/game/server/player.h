@@ -173,6 +173,12 @@ public:
 
 	bool m_Moderating;
 
+	struct {
+		bool m_Authenticated;
+		int m_UserID;
+		char m_Username[32];
+	} m_Account;
+
 	bool AfkTimer(int new_target_x, int new_target_y); //returns true if kicked
 	void AfkVoteTimer(CNetObj_PlayerInput *NewTarget);
 	int64 m_LastPlaytime;
@@ -195,6 +201,8 @@ public:
 	void ProcessScoreResult(CScorePlayerResult &Result);
 	std::shared_ptr<CScorePlayerResult> m_ScoreQueryResult;
 	std::shared_ptr<CScorePlayerResult> m_ScoreFinishResult;
+	void ProcessAuthResult(CScoreAuthResult &Result);
+	std::shared_ptr<CScoreAuthResult> m_ScoreAuthResult;
 	bool m_NotEligibleForFinish;
 	int64 m_EligibleForFinishCheck;
 	bool m_VotedForPractice;

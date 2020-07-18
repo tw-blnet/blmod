@@ -5,6 +5,7 @@
 #include "player.h"
 
 #include <engine/server.h>
+#include <engine/server/server.h>
 #include "gamecontext.h"
 #include <game/gamecore.h>
 #include <game/version.h>
@@ -123,6 +124,7 @@ void CPlayer::Reset()
 	m_LastSQLQuery = 0;
 	m_ScoreQueryResult = nullptr;
 	m_ScoreFinishResult = nullptr;
+	m_ScoreAuthResult = nullptr;
 
 	int64 Now = Server()->Tick();
 	int64 TickSpeed = Server()->TickSpeed();
@@ -177,6 +179,11 @@ void CPlayer::Tick()
 	{
 		ProcessScoreResult(*m_ScoreFinishResult);
 		m_ScoreFinishResult = nullptr;
+	}
+	if(m_ScoreAuthResult != nullptr && m_ScoreAuthResult.use_count() == 1)
+	{
+		ProcessAuthResult(*m_ScoreAuthResult);
+		m_ScoreAuthResult = nullptr;
 	}
 
 	if(!Server()->ClientIngame(m_ClientID))
@@ -982,6 +989,90 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 				m_Score = -10000;
 			Server()->ExpireServerInfo();
 			break;
+		}
+	}
+}
+
+void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
+{
+	if(Result.m_Done)
+	{
+		switch(Result.m_Action)
+		{
+			case CScoreAuthResult::REGISTER:
+			{
+				if (Result.m_Data.m_Register.m_UserID < 0)
+				{
+					GameServer()->SendChatTarget(m_ClientID, "Account can't be registered! Maybe your username is already in use?");
+					break;
+				}
+
+				char aBuf[64];
+				str_format(aBuf, sizeof(aBuf), "Account `%s` (id #%d) is registered! Now you can use /login", Result.m_Data.m_Register.m_Username, Result.m_Data.m_Register.m_UserID);
+				GameServer()->SendChatTarget(m_ClientID, aBuf);
+				break;
+			}
+			case CScoreAuthResult::LOGIN:
+			{
+				if (Result.m_Data.m_Register.m_UserID < 0)
+				{
+					GameServer()->SendChatTarget(m_ClientID, "Wrong credentials! Check your login and password");
+					break;
+				}
+
+				m_Account.m_UserID = Result.m_Data.m_Login.m_UserID;
+				str_copy(m_Account.m_Username, Result.m_Data.m_Register.m_Username, 32);
+				m_Account.m_Authenticated = true;
+
+				if (Result.m_Data.m_Login.m_RconLevel > 0)
+					((CServer*) Server())->ForceAuth(m_ClientID, Result.m_Data.m_Login.m_RconLevel);
+
+				char aBuf[64];
+				str_format(aBuf, sizeof(aBuf), "You have successfully logged in as %s (id #%d)!", m_Account.m_Username, m_Account.m_UserID);
+				GameServer()->SendChatTarget(m_ClientID, aBuf);
+
+				for (int ClientID = 0; ClientID < MAX_CLIENTS; ClientID++)
+				{
+					if (ClientID == m_ClientID)
+						continue;
+
+					if (!GameServer()->m_apPlayers[ClientID] || !GameServer()->IsClientPlayer(ClientID))
+						continue;
+
+					if (!GameServer()->m_apPlayers[ClientID]->m_Account.m_Authenticated)
+						continue;
+
+					if (str_comp(GameServer()->m_apPlayers[ClientID]->m_Account.m_Username, m_Account.m_Username) == 0)
+						GameServer()->Score()->Logout(ClientID);
+				}
+				break;
+			}
+			case CScoreAuthResult::CHANGE_PASSWORD:
+			{
+				if (!Result.m_Data.m_ChangePassword.m_Success)
+				{
+					GameServer()->SendChatTarget(m_ClientID, "Error! It's not possible to process your request now");
+					break;
+				}
+
+				GameServer()->SendChatTarget(m_ClientID, "You have successfully changed your password");
+				break;
+			}
+			case CScoreAuthResult::LOGOUT:
+			{
+				if (!Result.m_Data.m_Logout.m_Success)
+				{
+					GameServer()->SendChatTarget(m_ClientID, "Error! It's not possible to process your request now");
+					break;
+				}
+
+				((CServer*) Server())->LogoutClient(m_ClientID, "/logout");
+
+				m_Account.m_Authenticated = false;
+
+				GameServer()->SendChatTarget(m_ClientID, "You are logged out");
+				break;
+			}
 		}
 	}
 }

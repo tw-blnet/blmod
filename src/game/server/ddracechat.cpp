@@ -1535,3 +1535,117 @@ void CGameContext::ConArenaDecline(IConsole::IResult *pResult, void *pUserData)
 
 	pArenasManager->DeclineFight(Creator, Target);
 }
+
+static bool ValidateUsername(const char* Username)
+{
+	for (int i = 0; i < str_length(Username); i++)
+	{
+		char Char = Username[i];
+
+		if (Char >= 'a' && Char <= 'z') continue;
+		if (Char >= 'A' && Char <= 'Z') continue;
+		if (Char >= '0' && Char <= '9') continue;
+
+		return false;
+	}
+
+	int UsernameLength = str_length(Username);
+	if (UsernameLength < 3)
+		return false;
+
+	return true;
+}
+
+static bool ValidatePassword(const char* Password)
+{
+	int PasswordLength = str_length(Password);
+	if (PasswordLength < 8)
+		return false;
+
+	return true;
+}
+
+void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData) // TODO: rate limit registers from IP per day
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
+		return;
+
+	if (pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "You are already logged in");
+		return;
+	}
+
+	const char* Username = pResult->GetString(0);
+	const char* Password = pResult->GetString(1);
+
+	if (!ValidateUsername(Username))
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "Username have to contain at least 3 characters and only use these characters: a-z A-Z 0-9");
+		return;
+	}
+
+	if (!ValidatePassword(Password))
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "Password have to contain at least 8 characters");
+		return;
+	}
+
+	pSelf->Score()->Register(pResult->m_ClientID, Username, Password);
+}
+
+void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
+		return;
+
+	if (pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "You are already logged in");
+		return;
+	}
+
+	const char* Username = pResult->GetString(0);
+	const char* Password = pResult->GetString(1);
+	pSelf->Score()->Login(pResult->m_ClientID, Username, Password);
+}
+
+void CGameContext::ConChangePassword(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
+		return;
+
+	if (!pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "You are not logged in");
+		return;
+	}
+
+	const char* Password = pResult->GetString(0);
+
+	if (!ValidatePassword(Password))
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "Password have to contain at least 8 characters");
+		return;
+	}
+
+	pSelf->Score()->ChangePassword(pResult->m_ClientID, Password);
+}
+
+void CGameContext::ConLogout(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
+		return;
+
+	if (!pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "You are not logged in");
+		return;
+	}
+
+	pSelf->Score()->Logout(pResult->m_ClientID);
+}

@@ -1274,6 +1274,56 @@ static inline int MsgFromSixup(int Msg, bool System)
 	return Msg;
 }
 
+void CServer::ForceAuth(int ClientID, int AuthLevel)
+{
+	int KeySlot = m_AuthManager.DefaultKey(AuthLevel);
+
+	if(!IsSixup(ClientID))
+	{
+		CMsgPacker Msg(NETMSG_RCON_AUTH_STATUS, true);
+		Msg.AddInt(1);	//authed
+		Msg.AddInt(1);	//cmdlist
+		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+	else
+	{
+		CMsgPacker Msg(11, true, true); //NETMSG_RCON_AUTH_ON
+		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+
+	m_aClients[ClientID].m_Authed = AuthLevel; // Keeping m_Authed around is unwise...
+	m_aClients[ClientID].m_AuthKey = KeySlot;
+	m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(AUTHED_ADMIN - AuthLevel, CFGFLAG_SERVER);
+
+	char aBuf[256];
+	const char *pIdent = m_AuthManager.KeyIdent(KeySlot);
+	switch (AuthLevel)
+	{
+		case AUTHED_ADMIN:
+		{
+			SendRconLine(ClientID, "Admin authentication successful. Full remote console access granted.");
+			str_format(aBuf, sizeof(aBuf), "ClientID=%d authed with key=%s (admin)", ClientID, pIdent);
+			break;
+		}
+		case AUTHED_MOD:
+		{
+			SendRconLine(ClientID, "Moderator authentication successful. Limited remote console access granted.");
+			str_format(aBuf, sizeof(aBuf), "ClientID=%d authed with key=%s (moderator)", ClientID, pIdent);
+			break;
+		}
+		case AUTHED_HELPER:
+		{
+			SendRconLine(ClientID, "Helper authentication successful. Limited remote console access granted.");
+			str_format(aBuf, sizeof(aBuf), "ClientID=%d authed with key=%s (helper)", ClientID, pIdent);
+			break;
+		}
+	}
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
+	// DDRace
+	GameServer()->OnSetAuthed(ClientID, AuthLevel);
+}
+
 void CServer::ProcessClientPacket(CNetChunk *pPacket)
 {
 	int ClientID = pPacket->m_ClientID;

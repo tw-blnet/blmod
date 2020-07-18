@@ -503,9 +503,10 @@ bool CSqlScore::MapInfoThread(CSqlServer* pSqlServer, const CSqlData<CScorePlaye
 
 void CSqlScore::SaveScore(int ClientID, float Time, const char *pTimestamp, float CpTime[NUM_CHECKPOINTS], bool NotEligible)
 {
-	CConsole* pCon = (CConsole*)GameServer()->Console();
-	if(pCon->m_Cheated || NotEligible)
-		return;
+	// bugged:
+	// CConsole* pCon = (CConsole*)GameServer()->Console();
+	// if(pCon->m_Cheated || NotEligible)
+	// 	return;
 
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
 	if(pCurPlayer->m_ScoreFinishResult != nullptr)
@@ -1882,5 +1883,255 @@ bool CSqlScore::GetSavesThread(CSqlServer* pSqlServer, const CSqlData<CScorePlay
 	}
 	return false;
 }
+
+static unsigned int NetAddrToIP(NETADDR Addr)
+{
+	unsigned int IP = 0;
+	if (Addr.type == NETTYPE_IPV4) // TODO: check for NETTYPE_IPV6 and NETTYPE_WEBSOCKET_IPV4?
+	{
+		unsigned char aIP[4];
+		for (int i = 0; i < 4; i++)
+			aIP[i] = Addr.ip[3-i];
+		IP = *(unsigned int*)aIP;
+	}
+	return IP;
+}
+
+void CSqlScore::Register(int ClientID, const char* Username, const char* Password)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	NETADDR Addr;
+	Server()->GetClientAddr(ClientID, &Addr);
+	unsigned int IP = NetAddrToIP(Addr);
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	pCurPlayer->m_ScoreAuthResult = std::make_shared<CScoreAuthResult>();
+
+	CSqlLoginData *Tmp = new CSqlLoginData(pCurPlayer->m_ScoreAuthResult);
+	Tmp->m_Username = Username;
+	Tmp->m_Password = Password;
+	Tmp->m_IP = IP;
+
+	thread_init_and_detach(CSqlExecData<CScoreAuthResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreAuthResult>(RegisterThread, Tmp),
+			"register");
+}
+
+bool CSqlScore::RegisterThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure)
+{
+	const CSqlLoginData *pData = dynamic_cast<const CSqlLoginData *>(pGameData);
+	pData->m_pResult->m_Action = CScoreAuthResult::REGISTER;
+	pData->m_pResult->m_Data.m_Register.m_UserID = -1;
+
+	if (HandleFailure)
+	{
+		pData->m_pResult->m_Done = true;
+		return true;
+	}
+
+	try
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT COUNT(id) AS count "
+				"FROM %s_users "
+				"WHERE created_ip=%u AND TIME_TO_SEC(TIMEDIFF(NOW(), created)) < %d;",
+				pSqlServer->GetPrefix(), pData->m_IP, 60*60*24);
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if (pSqlServer->GetResults()->next())
+		{
+			int count = pSqlServer->GetResults()->getInt("count");
+			if (count >= 4)
+			{
+				pData->m_pResult->m_Done = true;
+				return true;
+			}
+		}
+		else
+		{
+			dbg_msg("sql", "ERROR: Can't select count of registered players with same ip");
+			return false;
+		}
+
+		str_format(aBuf, sizeof(aBuf),
+				"INSERT INTO %s_users(username, password, created_ip) "
+				"VALUES ('%s', '%s', '%u');",
+				pSqlServer->GetPrefix(), pData->m_Username.ClrStr(), pData->m_Password.ClrStr(), pData->m_IP);
+		pSqlServer->executeSql(aBuf);
+
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT LAST_INSERT_ID() AS id;");
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if (pSqlServer->GetResults()->next())
+		{
+			pData->m_pResult->m_Data.m_Register.m_UserID = pSqlServer->GetResults()->getInt("id");
+			str_copy(pData->m_pResult->m_Data.m_Register.m_Username, pData->m_Username.Str(), 32);
+		}
+
+		dbg_msg("sqldbg", "uid: %d", pData->m_pResult->m_Data.m_Register.m_UserID);
+
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "User registration done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not register player");
+	}
+	return false;
+}
+
+void CSqlScore::Login(int ClientID, const char* Username, const char* Password)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	NETADDR Addr;
+	Server()->GetClientAddr(ClientID, &Addr);
+	unsigned int IP = NetAddrToIP(Addr);
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	pCurPlayer->m_ScoreAuthResult = std::make_shared<CScoreAuthResult>();
+
+	CSqlLoginData *Tmp = new CSqlLoginData(pCurPlayer->m_ScoreAuthResult);
+	Tmp->m_Username = Username;
+	Tmp->m_Password = Password;
+	Tmp->m_IP = IP;
+
+	thread_init_and_detach(CSqlExecData<CScoreAuthResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreAuthResult>(LoginThread, Tmp),
+			"login");
+}
+
+bool CSqlScore::LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure)
+{
+	const CSqlLoginData *pData = dynamic_cast<const CSqlLoginData *>(pGameData);
+	pData->m_pResult->m_Action = CScoreAuthResult::LOGIN;
+	pData->m_pResult->m_Data.m_Login.m_UserID = -1;
+	pData->m_pResult->m_Data.m_Login.m_RconLevel = 0;
+
+	if (HandleFailure)
+	{
+		pData->m_pResult->m_Done = true;
+		return true;
+	}
+
+	try
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT id, rcon_lvl "
+				"FROM %s_users "
+				"WHERE username='%s' AND password='%s' "
+				"LIMIT 1;",
+				pSqlServer->GetPrefix(), pData->m_Username.ClrStr(), pData->m_Password.ClrStr());
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if(pSqlServer->GetResults()->next())
+		{
+			int UserID = (int)pSqlServer->GetResults()->getInt("id");
+			int RconLevel = (int)pSqlServer->GetResults()->getInt("rcon_lvl");
+
+			pData->m_pResult->m_Data.m_Login.m_UserID = UserID;
+			pData->m_pResult->m_Data.m_Login.m_RconLevel = RconLevel;
+			str_copy(pData->m_pResult->m_Data.m_Login.m_Username, pData->m_Username.Str(), 32);
+		}
+		else
+		{
+			pData->m_pResult->m_Done = true;
+			return true;
+		}
+
+		str_format(aBuf, sizeof(aBuf),
+				"UPDATE %s_users "
+				"SET last_login=NOW(), "
+				"last_login_ip=%u "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), pData->m_IP, pData->m_pResult->m_Data.m_Login.m_UserID);
+		pSqlServer->executeSql(aBuf);
+
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "User loading done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not login player");
+	}
+	return false;
+}
+
+void CSqlScore::Logout(int ClientID)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	pCurPlayer->m_ScoreAuthResult = std::make_shared<CScoreAuthResult>();
+	pCurPlayer->m_ScoreAuthResult->m_Action = CScoreAuthResult::LOGOUT;
+	pCurPlayer->m_ScoreAuthResult->m_Data.m_Logout.m_Success = true;
+	pCurPlayer->m_ScoreAuthResult->m_Done = true;
+}
+
+void CSqlScore::ChangePassword(int ClientID, const char* Password)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	if (!pCurPlayer->m_Account.m_Authenticated)
+		return;
+	pCurPlayer->m_ScoreAuthResult = std::make_shared<CScoreAuthResult>();
+
+	CSqlLoginData *Tmp = new CSqlLoginData(pCurPlayer->m_ScoreAuthResult);
+	Tmp->m_Username = pCurPlayer->m_Account.m_Username;
+	Tmp->m_Password = Password;
+
+	thread_init_and_detach(CSqlExecData<CScoreAuthResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreAuthResult>(ChangePasswordThread, Tmp),
+			"change password");
+}
+
+bool CSqlScore::ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure)
+{
+	const CSqlLoginData *pData = dynamic_cast<const CSqlLoginData *>(pGameData);
+	pData->m_pResult->m_Action = CScoreAuthResult::CHANGE_PASSWORD;
+	pData->m_pResult->m_Data.m_ChangePassword.m_Success = false;
+
+	if (HandleFailure)
+	{
+		pData->m_pResult->m_Done = true;
+		return true;
+	}
+
+	try
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf),
+				"UPDATE %s_users "
+				"SET password='%s' "
+				"WHERE username='%s';",
+				pSqlServer->GetPrefix(), pData->m_Password.ClrStr(), pData->m_Username.ClrStr());
+		pSqlServer->executeSql(aBuf);
+
+		pData->m_pResult->m_Data.m_ChangePassword.m_Success = true;
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "Password changing done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not change password");
+	}
+	return false;
+}
+
 
 #endif

@@ -102,6 +102,42 @@ struct CScoreInitResult
 	float m_CurrentRecord;
 };
 
+struct CScoreAuthResult
+{
+	std::atomic_bool m_Done = ATOMIC_VAR_INIT(false);
+
+	enum Action
+	{
+		REGISTER,
+		LOGIN,
+		CHANGE_PASSWORD,
+		LOGOUT,
+	} m_Action;
+
+	union {
+		struct {
+			int m_UserID;
+			char m_Username[32];
+		} m_Register;
+
+		struct {
+			int m_UserID;
+			char m_Username[32];
+			int m_RconLevel;
+		} m_Login;
+
+		struct
+		{
+			bool m_Success;
+		} m_ChangePassword;
+
+		struct
+		{
+			bool m_Success;
+		} m_Logout;
+	} m_Data;
+};
+
 class CPlayerData
 {
 public:
@@ -166,6 +202,11 @@ public:
 	virtual void SaveTeam(int ClientID, const char *pCode, const char *pServer) = 0;
 	virtual void LoadTeam(const char *pCode, int ClientID) = 0;
 	virtual void GetSaves(int ClientID) = 0;
+
+	virtual void Register(int ClientID, const char* Username, const char* Password) = 0;
+	virtual void Login(int ClientID, const char* Username, const char* Password) = 0;
+	virtual void Logout(int ClientID) = 0;
+	virtual void ChangePassword(int ClientID, const char* Password) = 0;
 
 	// called when the server is shut down but not on mapchange/reload
 	virtual void OnShutdown() = 0;

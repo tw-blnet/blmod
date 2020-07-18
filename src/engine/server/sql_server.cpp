@@ -193,6 +193,18 @@ bool CSqlServer::CreateTables()
 		str_format(aBuf, sizeof(aBuf), "CREATE TABLE IF NOT EXISTS %s_points (Name VARCHAR(%d) BINARY NOT NULL, Points INT DEFAULT 0, UNIQUE KEY Name (Name)) CHARACTER SET utf8mb4;", m_aPrefix, MAX_NAME_LENGTH);
 		executeSql(aBuf);
 
+		str_format(aBuf, sizeof(aBuf), "CREATE TABLE IF NOT EXISTS %s_users ("
+			"id INT AUTO_INCREMENT PRIMARY KEY,"
+			"username VARCHAR(31) NOT NULL UNIQUE,"
+			"password VARCHAR(63) NOT NULL,"
+			"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+			"created_ip INT UNSIGNED,"
+			"last_login TIMESTAMP,"
+			"last_login_ip INT UNSIGNED,"
+			"rcon_lvl TINYINT NOT NULL DEFAULT 0,"
+		") CHARACTER SET utf8mb4;", m_aPrefix);
+		executeSql(aBuf);
+
 		dbg_msg("sql", "Tables were created successfully");
 		Success = true;
 	}

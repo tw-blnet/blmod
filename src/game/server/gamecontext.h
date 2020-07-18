@@ -391,6 +391,11 @@ private:
 	static void ConArenaAccept(IConsole::IResult *pResult, void *pUserData);
 	static void ConArenaDecline(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConRegister(IConsole::IResult *pResult, void *pUserData);
+	static void ConLogin(IConsole::IResult *pResult, void *pUserData);
+	static void ConChangePassword(IConsole::IResult *pResult, void *pUserData);
+	static void ConLogout(IConsole::IResult *pResult, void *pUserData);
+
 	enum
 	{
 		MAX_MUTES=32,

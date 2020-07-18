@@ -317,6 +317,8 @@ public:
 	void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
 	void UpdateClientRconCommands();
 
+	void ForceAuth(int ClientID, int AuthLevel);
+
 	void ProcessClientPacket(CNetChunk *pPacket);
 
 	class CCache {

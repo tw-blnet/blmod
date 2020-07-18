@@ -108,6 +108,14 @@ struct CSqlTeamLoad : CSqlData<CScoreSaveResult>
 	int m_NumPlayer;
 };
 
+struct CSqlLoginData : CSqlData<CScoreAuthResult>
+{
+	using CSqlData<CScoreAuthResult>::CSqlData;
+	sqlstr::CSqlString<31> m_Username;
+	sqlstr::CSqlString<63> m_Password;
+	unsigned int m_IP;
+};
+
 // controls one thread
 template < typename TResult >
 struct CSqlExecData
@@ -155,6 +163,10 @@ class CSqlScore: public IScore
 
 	static bool SaveScoreThread(CSqlServer* pSqlServer, const CSqlData<CScorePlayerResult> *pGameData, bool HandleFailure = false);
 	static bool SaveTeamScoreThread(CSqlServer* pSqlServer, const CSqlData<void> *pGameData, bool HandleFailure = false);
+
+	static bool RegisterThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
+	static bool LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
+	static bool ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
 
 	CGameContext *GameServer() { return m_pGameServer; }
 	IServer *Server() { return m_pServer; }
@@ -213,6 +225,12 @@ public:
 	virtual void SaveScore(int ClientID, float Time, const char *pTimestamp,
 			float CpTime[NUM_CHECKPOINTS], bool NotEligible);
 	virtual void SaveTeamScore(int* aClientIDs, unsigned int Size, float Time, const char *pTimestamp);
+
+	// Accounts related
+	virtual void Register(int ClientID, const char* Username, const char* Password);
+	virtual void Login(int ClientID, const char* Username, const char* Password);
+	virtual void Logout(int ClientID);
+	virtual void ChangePassword(int ClientID, const char* Password);
 
 	virtual void OnShutdown();
 };

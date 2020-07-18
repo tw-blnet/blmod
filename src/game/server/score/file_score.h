@@ -83,6 +83,11 @@ public:
 	virtual void LoadTeam(const char* Code, int ClientID);
 	virtual void GetSaves(int ClientID);
 
+	virtual void Register(int ClientID, const char* Username, const char* Password) {}
+	virtual void Login(int ClientID, const char* Username, const char* Password) {}
+	virtual void Logout(int ClientID) {}
+	virtual void ChangePassword(int ClientID, const char* Password) {}
+
 	virtual void OnShutdown();
 
 private:
