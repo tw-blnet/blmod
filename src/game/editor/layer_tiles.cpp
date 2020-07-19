@@ -76,7 +76,11 @@ void CLayerTiles::PrepareForSave()
 	{
 		for(int y = 0; y < m_Height; y++)
 			for(int x = 0; x < m_Width; x++)
-				if (m_pTiles[y*m_Width+x].m_Index != 1 && m_pTiles[y*m_Width+x].m_Index != 3)
+				if (m_pTiles[y*m_Width+x].m_Index != 1 &&
+					m_pTiles[y*m_Width+x].m_Index != 3 &&
+					m_pTiles[y*m_Width+x].m_Index != 5 &&
+					m_pTiles[y*m_Width+x].m_Index != 66 &&
+					m_pTiles[y*m_Width+x].m_Index != 67)
 				{
 					CTile* tile = &m_pTiles[y*m_Width+x];
 					tile->m_Index = m_Game ? 2 : 0;
