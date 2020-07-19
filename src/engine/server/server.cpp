@@ -432,6 +432,14 @@ void CServer::SetClientFlags(int ClientID, int Flags)
 		m_aClients[ClientID].m_Flags = Flags;
 }
 
+int CServer::GetClientLastMapChangedTick(int ClientID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return -1;
+
+	return m_aClients[ClientID].m_LastMapChangedTick;
+}
+
 int CServer::GetClientMapOption(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
@@ -450,6 +458,7 @@ bool CServer::SetClientMapOption(int ClientID, int MapOption)
 	if (MapOption < 0 || MapOption >= g_Config.m_SvMapOptionsCount)
 		return false;
 
+	m_aClients[ClientID].m_LastMapChangedTick = Tick();
 	m_aClients[ClientID].m_MapOption = MapOption;
 
 	SendMap(ClientID);
@@ -993,6 +1002,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_ShowIps = false;
 	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->SendCapabilities(ClientID);
@@ -1021,6 +1031,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_ShowIps = false;
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
 	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->GameServer()->OnClientEngineJoin(ClientID, Sixup);
@@ -1108,6 +1119,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	pThis->m_aClients[ClientID].m_Sixup = false;
 	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 
 	pThis->GameServer()->OnClientEngineDrop(ClientID, pReason);
 	pThis->Antibot()->OnEngineClientDrop(ClientID, pReason);

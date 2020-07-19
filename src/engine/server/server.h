@@ -205,6 +205,7 @@ public:
 		bool m_Sixup;
 
 		int m_MapOption;
+		int m_LastMapChangedTick;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -270,6 +271,7 @@ public:
 	virtual void SetClientScore(int ClientID, int Score);
 	virtual void SetClientFlags(int ClientID, int Flags);
 
+	virtual int GetClientLastMapChangedTick(int ClientID);
 	virtual int GetClientMapOption(int ClientID);
 	virtual bool SetClientMapOption(int ClientID, int MapOption);
 

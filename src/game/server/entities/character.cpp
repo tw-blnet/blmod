@@ -1941,6 +1941,20 @@ void CCharacter::HandleTiles(int Index)
 		SetRainbow(true);
 	}
 
+	if (m_TileIndex == TILE_MAPSTYLE)
+	{
+		float SecondsPassed = (Server()->Tick() - Server()->GetClientLastMapChangedTick(GetPlayer()->GetCID())) / (float) Server()->TickSpeed();
+
+		if (SecondsPassed > 1.0f)
+		{
+			int MapOption = Server()->GetClientMapOption(GetPlayer()->GetCID()) + 1;
+			if (MapOption >= g_Config.m_SvMapOptionsCount)
+				MapOption = 0;
+
+			Server()->SetClientMapOption(GetPlayer()->GetCID(), MapOption);
+		}
+	}
+
 	// flag protection
 	if (m_TileIndex == TILE_NOFLAG || m_TileFIndex == TILE_NOFLAG)
 	{
