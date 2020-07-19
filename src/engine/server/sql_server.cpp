@@ -201,7 +201,7 @@ bool CSqlServer::CreateTables()
 			"created_ip INT UNSIGNED,"
 			"last_login TIMESTAMP,"
 			"last_login_ip INT UNSIGNED,"
-			"rcon_lvl TINYINT NOT NULL DEFAULT 0,"
+			"rcon_lvl TINYINT NOT NULL DEFAULT 0"
 		") CHARACTER SET utf8mb4;", m_aPrefix);
 		executeSql(aBuf);
 
