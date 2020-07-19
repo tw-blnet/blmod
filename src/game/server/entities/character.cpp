@@ -1947,6 +1947,8 @@ void CCharacter::HandleTiles(int Index)
 
 		if (SecondsPassed > 1.0f)
 		{
+			GameServer()->m_pController->DropFlag(this);
+
 			int MapOption = Server()->GetClientMapOption(GetPlayer()->GetCID()) + 1;
 			if (MapOption >= g_Config.m_SvMapOptionsCount)
 				MapOption = 0;
