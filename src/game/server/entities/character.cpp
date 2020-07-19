@@ -876,7 +876,7 @@ void CCharacter::Tick()
 			m_TailPos.push_back(m_Pos);
 		}
 
-		if (Server()->Tick() % 4 == 0)
+		if (Server()->Tick() % 8 == 0)
 		{
 			for (vec2 Pos : m_TailPos)
 			{
