@@ -191,6 +191,9 @@ public:
 	virtual void SetClientScore(int ClientID, int Score) = 0;
 	virtual void SetClientFlags(int ClientID, int Flags) = 0;
 
+	virtual int GetClientMapOption(int ClientID) = 0;
+	virtual bool SetClientMapOption(int ClientID, int MapOption) = 0;
+
 	virtual int SnapNewID() = 0;
 	virtual void SnapFreeID(int ID) = 0;
 	virtual void *SnapNewItem(int Type, int ID, int Size) = 0;

@@ -275,6 +275,11 @@ CServer::CServer(): m_Register(false), m_RegSixup(true)
 	m_CurrentGameTick = 0;
 	m_RunServer = 1;
 
+	m_aCurrentMapSha256.resize(2);
+	m_aCurrentMapCrc.resize(2);
+	m_apCurrentMapData.resize(2);
+	m_aCurrentMapSize.resize(2);
+
 	for(int i = 0; i < 2; i++)
 	{
 		m_apCurrentMapData[i] = 0;
@@ -425,6 +430,33 @@ void CServer::SetClientFlags(int ClientID, int Flags)
 
 	if(Flags > m_aClients[ClientID].m_Flags)
 		m_aClients[ClientID].m_Flags = Flags;
+}
+
+int CServer::GetClientMapOption(int ClientID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return -1;
+
+	if (m_aClients[ClientID].m_MapOption < 0)
+		return 0;
+	return m_aClients[ClientID].m_MapOption;
+}
+
+bool CServer::SetClientMapOption(int ClientID, int MapOption)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return false;
+
+	if (MapOption < 0 || MapOption >= g_Config.m_SvMapOptionsCount)
+		return false;
+
+	m_aClients[ClientID].m_MapOption = MapOption;
+
+	SendMap(ClientID);
+	m_aClients[ClientID].Reset();
+	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
+
+	return true;
 }
 
 void CServer::Kick(int ClientID, const char *pReason)
@@ -960,6 +992,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_ShowIps = false;
+	pThis->m_aClients[ClientID].m_MapOption = -1;
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->SendCapabilities(ClientID);
@@ -987,6 +1020,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_TrafficSince = 0;
 	pThis->m_aClients[ClientID].m_ShowIps = false;
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
+	pThis->m_aClients[ClientID].m_MapOption = -1;
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->GameServer()->OnClientEngineJoin(ClientID, Sixup);
@@ -1073,6 +1107,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aPrevStates[ClientID] = CClient::STATE_EMPTY;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	pThis->m_aClients[ClientID].m_Sixup = false;
+	pThis->m_aClients[ClientID].m_MapOption = -1;
 
 	pThis->GameServer()->OnClientEngineDrop(ClientID, pReason);
 	pThis->Antibot()->OnEngineClientDrop(ClientID, pReason);
@@ -1108,24 +1143,26 @@ void CServer::SendCapabilities(int ClientID)
 void CServer::SendMap(int ClientID)
 {
 	int Sixup = IsSixup(ClientID);
+	int ClientMapOption = m_aClients[ClientID].m_MapOption;
+	int MapOption = ClientMapOption >= 0 ? ClientMapOption * 2 + Sixup : Sixup;
 	{
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
 		Msg.AddString(GetMapName(), 0);
-		Msg.AddRaw(&m_aCurrentMapSha256[Sixup].data, sizeof(m_aCurrentMapSha256[Sixup].data));
-		Msg.AddInt(m_aCurrentMapCrc[Sixup]);
-		Msg.AddInt(m_aCurrentMapSize[Sixup]);
+		Msg.AddRaw(&m_aCurrentMapSha256[MapOption].data, sizeof(m_aCurrentMapSha256[MapOption].data));
+		Msg.AddInt(m_aCurrentMapCrc[MapOption]);
+		Msg.AddInt(m_aCurrentMapSize[MapOption]);
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
 	{
 		CMsgPacker Msg(NETMSG_MAP_CHANGE, true);
 		Msg.AddString(GetMapName(), 0);
-		Msg.AddInt(m_aCurrentMapCrc[Sixup]);
-		Msg.AddInt(m_aCurrentMapSize[Sixup]);
+		Msg.AddInt(m_aCurrentMapCrc[MapOption]);
+		Msg.AddInt(m_aCurrentMapSize[MapOption]);
 		if(Sixup)
 		{
 			Msg.AddInt(1);
 			Msg.AddInt(1024-128);
-			Msg.AddRaw(m_aCurrentMapSha256[Sixup].data, sizeof(m_aCurrentMapSha256[Sixup].data));
+			Msg.AddRaw(m_aCurrentMapSha256[MapOption].data, sizeof(m_aCurrentMapSha256[MapOption].data));
 		}
 		SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
 	}
@@ -1136,17 +1173,19 @@ void CServer::SendMap(int ClientID)
 void CServer::SendMapData(int ClientID, int Chunk)
 {
 	int Sixup = IsSixup(ClientID);
+	int ClientMapOption = m_aClients[ClientID].m_MapOption;
+	int MapOption = ClientMapOption >= 0 ? ClientMapOption * 2 + Sixup : Sixup;
 	unsigned int ChunkSize = 1024-128;
 	unsigned int Offset = Chunk * ChunkSize;
 	int Last = 0;
 
 	// drop faulty map data requests
-	if(Chunk < 0 || Offset > m_aCurrentMapSize[Sixup])
+	if(Chunk < 0 || Offset > m_aCurrentMapSize[MapOption])
 		return;
 
-	if(Offset+ChunkSize >= m_aCurrentMapSize[Sixup])
+	if(Offset+ChunkSize >= m_aCurrentMapSize[MapOption])
 	{
-		ChunkSize = m_aCurrentMapSize[Sixup]-Offset;
+		ChunkSize = m_aCurrentMapSize[MapOption]-Offset;
 		Last = 1;
 	}
 
@@ -1154,11 +1193,11 @@ void CServer::SendMapData(int ClientID, int Chunk)
 	if(!Sixup)
 	{
 		Msg.AddInt(Last);
-		Msg.AddInt(m_aCurrentMapCrc[SIX]);
+		Msg.AddInt(m_aCurrentMapCrc[MapOption]);
 		Msg.AddInt(Chunk);
 		Msg.AddInt(ChunkSize);
 	}
-	Msg.AddRaw(&m_apCurrentMapData[Sixup][Offset], ChunkSize);
+	Msg.AddRaw(&m_apCurrentMapData[MapOption][Offset], ChunkSize);
 	SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
 
 	if(g_Config.m_Debug)
@@ -2275,6 +2314,18 @@ int CServer::LoadMap(const char *pMapName)
 	// reinit snapshot ids
 	m_IDPool.TimeoutIDs();
 
+	size_t MapOptionsCount = g_Config.m_SvMapOptionsCount;
+	m_aCurrentMapSha256.resize(MapOptionsCount*2);
+	m_aCurrentMapCrc.resize(MapOptionsCount*2);
+	m_apCurrentMapData.resize(MapOptionsCount*2);
+	m_aCurrentMapSize.resize(MapOptionsCount*2);
+
+	for (size_t i = 0; i < MapOptionsCount*2; i++)
+	{
+		m_apCurrentMapData[i] = 0;
+		m_aCurrentMapSize[i] = 0;
+	}
+
 	// get the crc of the map
 	m_aCurrentMapSha256[SIX] = m_pMap->Sha256();
 	m_aCurrentMapCrc[SIX] = m_pMap->Crc();
@@ -2288,51 +2339,55 @@ int CServer::LoadMap(const char *pMapName)
 
 	str_copy(m_aCurrentMap, pMapName, sizeof(m_aCurrentMap));
 
-	// load complete map into memory for download
+	for (size_t i = 0; i < MapOptionsCount; i++)
 	{
-		str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
-		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-		m_aCurrentMapSize[SIX] = (unsigned int)io_length(File);
-		free(m_apCurrentMapData[SIX]);
-		m_apCurrentMapData[SIX] = (unsigned char *)malloc(m_aCurrentMapSize[SIX]);
-		io_read(File, m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
-		io_close(File);
 
-		m_aCurrentMapSha256[SIX] = sha256(m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
-		m_aCurrentMapCrc[SIX] = crc32(0, m_apCurrentMapData[SIX], m_aCurrentMapSize[SIX]);
-		sha256_str(m_aCurrentMapSha256[SIX], aSha256, sizeof(aSha256));
-		str_format(aBufMsg, sizeof(aBufMsg), "%s sha256 is %s", aBuf, aSha256);
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
-		str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_aCurrentMapCrc[SIX]);
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
-	}
-
-	// load sixup version of the map
-	if(g_Config.m_SvSixup)
-	{
-		str_format(aBuf, sizeof(aBuf), "maps7/%s.map", pMapName);
-		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-		if(!File)
+		// load complete map into memory for download
 		{
-			g_Config.m_SvSixup = 0;
-			dbg_msg("sixup", "couldn't load map %s", aBuf);
-			dbg_msg("sixup", "disabling 0.7 compatibility");
-		}
-		else
-		{
-			m_aCurrentMapSize[SIXUP] = (unsigned int)io_length(File);
-			free(m_apCurrentMapData[SIXUP]);
-			m_apCurrentMapData[SIXUP] = (unsigned char *)malloc(m_aCurrentMapSize[SIXUP]);
-			io_read(File, m_apCurrentMapData[SIXUP], m_aCurrentMapSize[SIXUP]);
+			str_format(aBuf, sizeof(aBuf), "maps/%s-%lu.map", pMapName, i+1);
+			IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
+			m_aCurrentMapSize[i*2] = (unsigned int)io_length(File);
+			free(m_apCurrentMapData[i*2]);
+			m_apCurrentMapData[i*2] = (unsigned char *)malloc(m_aCurrentMapSize[i*2]);
+			io_read(File, m_apCurrentMapData[i*2], m_aCurrentMapSize[i*2]);
 			io_close(File);
 
-			m_aCurrentMapSha256[SIXUP] = sha256(m_apCurrentMapData[SIXUP], m_aCurrentMapSize[SIXUP]);
-			m_aCurrentMapCrc[SIXUP] = crc32(0, m_apCurrentMapData[SIXUP], m_aCurrentMapSize[SIXUP]);
-			sha256_str(m_aCurrentMapSha256[SIXUP], aSha256, sizeof(aSha256));
+			m_aCurrentMapSha256[i*2] = sha256(m_apCurrentMapData[i*2], m_aCurrentMapSize[i*2]);
+			m_aCurrentMapCrc[i*2] = crc32(0, m_apCurrentMapData[i*2], m_aCurrentMapSize[i*2]);
+			sha256_str(m_aCurrentMapSha256[i*2], aSha256, sizeof(aSha256));
 			str_format(aBufMsg, sizeof(aBufMsg), "%s sha256 is %s", aBuf, aSha256);
-			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "sixup", aBufMsg);
-			str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_aCurrentMapCrc[SIXUP]);
-			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "sixup", aBufMsg);
+			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
+			str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_aCurrentMapCrc[i*2]);
+			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "six", aBufMsg);
+		}
+
+		// load sixup version of the map
+		if(g_Config.m_SvSixup)
+		{
+			str_format(aBuf, sizeof(aBuf), "maps7/%s-%lu.map", pMapName, i+1);
+			IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
+			if(!File)
+			{
+				g_Config.m_SvSixup = 0;
+				dbg_msg("sixup", "couldn't load map %s", aBuf);
+				dbg_msg("sixup", "disabling 0.7 compatibility");
+			}
+			else
+			{
+				m_aCurrentMapSize[i*2+1] = (unsigned int)io_length(File);
+				free(m_apCurrentMapData[i*2+1]);
+				m_apCurrentMapData[i*2+1] = (unsigned char *)malloc(m_aCurrentMapSize[i*2+1]);
+				io_read(File, m_apCurrentMapData[i*2+1], m_aCurrentMapSize[i*2+1]);
+				io_close(File);
+
+				m_aCurrentMapSha256[i*2+1] = sha256(m_apCurrentMapData[i*2+1], m_aCurrentMapSize[i*2+1]);
+				m_aCurrentMapCrc[i*2+1] = crc32(0, m_apCurrentMapData[i*2+1], m_aCurrentMapSize[i*2+1]);
+				sha256_str(m_aCurrentMapSha256[i*2+1], aSha256, sizeof(aSha256));
+				str_format(aBufMsg, sizeof(aBufMsg), "%s sha256 is %s", aBuf, aSha256);
+				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "sixup", aBufMsg);
+				str_format(aBufMsg, sizeof(aBufMsg), "%s crc is %08x", aBuf, m_aCurrentMapCrc[i*2+1]);
+				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "sixup", aBufMsg);
+			}
 		}
 	}
 

@@ -24,6 +24,7 @@
 #include <base/tl/array.h>
 
 #include <list>
+#include <vector>
 
 #include "antibot.h"
 #include "authmanager.h"
@@ -202,6 +203,8 @@ public:
 		std::shared_ptr<CHostLookup> m_pDnsblLookup;
 
 		bool m_Sixup;
+
+		int m_MapOption;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -238,10 +241,10 @@ public:
 	};
 
 	char m_aCurrentMap[MAX_PATH_LENGTH];
-	SHA256_DIGEST m_aCurrentMapSha256[2];
-	unsigned m_aCurrentMapCrc[2];
-	unsigned char *m_apCurrentMapData[2];
-	unsigned int m_aCurrentMapSize[2];
+	std::vector<SHA256_DIGEST> m_aCurrentMapSha256;
+	std::vector<unsigned> m_aCurrentMapCrc;
+	std::vector<unsigned char *> m_apCurrentMapData;
+	std::vector<unsigned int> m_aCurrentMapSize;
 
 	CDemoRecorder m_aDemoRecorder[MAX_CLIENTS+1];
 	CRegister m_Register;
@@ -266,6 +269,9 @@ public:
 	virtual void SetClientCountry(int ClientID, int Country);
 	virtual void SetClientScore(int ClientID, int Score);
 	virtual void SetClientFlags(int ClientID, int Flags);
+
+	virtual int GetClientMapOption(int ClientID);
+	virtual bool SetClientMapOption(int ClientID, int MapOption);
 
 	void Kick(int ClientID, const char *pReason);
 	void Ban(int ClientID, int Seconds, const char *pReason);
