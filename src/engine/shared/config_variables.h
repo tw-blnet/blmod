@@ -314,6 +314,9 @@ MACRO_CONFIG_INT(SvDefaultTimerType, sv_default_timer_type, 0, 0, 3, CFGFLAG_SER
 MACRO_CONFIG_INT(SvSnapTeams, sv_snap_teams, 0, 0, 1, CFGFLAG_SERVER, "Whether players teams numbers should be visible")
 MACRO_CONFIG_INT(SvAllowArenas, sv_allow_1vs1, 1, 0, 1, CFGFLAG_SERVER, "Allow 1vs1 fights")
 
+MACRO_CONFIG_INT(SvAccountLogin, sv_account_login, 1, 0, 1, CFGFLAG_SERVER, "Allow login")
+MACRO_CONFIG_INT(SvAccountRegister, sv_account_register, 1, 0, 1, CFGFLAG_SERVER, "Allow register new account")
+
 // these might need some fine tuning
 MACRO_CONFIG_INT(SvChatPenalty, sv_chat_penalty, 250, 50, 1000, CFGFLAG_SERVER, "chat score will be increased by this on every message, and decremented by 1 on every tick.")
 MACRO_CONFIG_INT(SvChatThreshold, sv_chat_threshold, 1000, 50, 10000 , CFGFLAG_SERVER, "if chats core exceeds this, the player will be muted for sv_spam_mute_duration seconds")

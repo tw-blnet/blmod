@@ -1565,11 +1565,17 @@ static bool ValidatePassword(const char* Password)
 	return true;
 }
 
-void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData) // TODO: rate limit registers from IP per day
+void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
 		return;
+
+	if (!g_Config.m_SvAccountRegister)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "account", "Account registration is currently disabled");
+		return;
+	}
 
 	if (pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
 	{
@@ -1600,6 +1606,12 @@ void CGameContext::ConLogin(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
 		return;
+
+	if (!g_Config.m_SvAccountLogin)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "account", "Account login is currently disabled");
+		return;
+	}
 
 	if (pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
 	{
