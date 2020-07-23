@@ -111,8 +111,8 @@ struct CSqlTeamLoad : CSqlData<CScoreSaveResult>
 struct CSqlLoginData : CSqlData<CScoreAuthResult>
 {
 	using CSqlData<CScoreAuthResult>::CSqlData;
-	sqlstr::CSqlString<31> m_Username;
-	sqlstr::CSqlString<63> m_Password;
+	sqlstr::CSqlString<MAX_USERNAME_LENGTH> m_Username;
+	sqlstr::CSqlString<MAX_PASSWORD_LENGTH> m_Password;
 	unsigned int m_IP;
 };
 

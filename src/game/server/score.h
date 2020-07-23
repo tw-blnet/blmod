@@ -14,6 +14,9 @@ enum
 	TIMESTAMP_STR_LENGTH = 20, // 2019-04-02 19:38:36
 };
 
+const int MAX_USERNAME_LENGTH = 31;
+const int MAX_PASSWORD_LENGTH = 63;
+
 struct CScorePlayerResult
 {
 	std::atomic_bool m_Done;
@@ -117,12 +120,12 @@ struct CScoreAuthResult
 	union {
 		struct {
 			int m_UserID;
-			char m_Username[32];
+			char m_Username[MAX_USERNAME_LENGTH+1];
 		} m_Register;
 
 		struct {
 			int m_UserID;
-			char m_Username[32];
+			char m_Username[MAX_USERNAME_LENGTH+1];
 			int m_RconLevel;
 			int m_Level;
 			int m_Experience;
