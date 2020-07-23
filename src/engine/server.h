@@ -194,6 +194,7 @@ public:
 	virtual int GetClientLastMapChangedTick(int ClientID) = 0;
 	virtual int GetClientMapOption(int ClientID) = 0;
 	virtual bool SetClientMapOption(int ClientID, int MapOption) = 0;
+	virtual bool IsClientChangeMapOption(int ClientID) = 0;
 
 	virtual int SnapNewID() = 0;
 	virtual void SnapFreeID(int ID) = 0;

@@ -445,9 +445,9 @@ int CServer::GetClientMapOption(int ClientID)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
 		return -1;
 
-	if (m_aClients[ClientID].m_MapOption < 0)
+	if (m_aClients[ClientID].m_UsedMapOption < 0)
 		return 0;
-	return m_aClients[ClientID].m_MapOption;
+	return m_aClients[ClientID].m_UsedMapOption;
 }
 
 bool CServer::SetClientMapOption(int ClientID, int MapOption)
@@ -459,13 +459,29 @@ bool CServer::SetClientMapOption(int ClientID, int MapOption)
 		return false;
 
 	m_aClients[ClientID].m_LastMapChangedTick = Tick();
-	m_aClients[ClientID].m_MapOption = MapOption;
+	m_aClients[ClientID].m_RequestedMapOption = MapOption;
+
+	return true;
+}
+
+bool CServer::IsClientChangeMapOption(int ClientID)
+{
+	return m_aClients[ClientID].m_ChangingMapOption;
+}
+
+void CServer::SendRequestedMapOption(int ClientID)
+{
+	m_aClients[ClientID].m_UsedMapOption = m_aClients[ClientID].m_RequestedMapOption;
+	m_aClients[ClientID].m_ChangingMapOption = true;
+
+	const char* pReason = "map style change";
+	GameServer()->OnClientDrop(ClientID, pReason);
+	GameServer()->OnClientEngineDrop(ClientID, pReason);
+	Antibot()->OnEngineClientDrop(ClientID, pReason);
 
 	SendMap(ClientID);
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-
-	return true;
 }
 
 void CServer::Kick(int ClientID, const char *pReason)
@@ -1001,7 +1017,9 @@ int CServer::NewClientNoAuthCallback(int ClientID, void *pUser)
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
 	pThis->m_aClients[ClientID].m_ShowIps = false;
-	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_ChangingMapOption = false;
+	pThis->m_aClients[ClientID].m_UsedMapOption = -1;
+	pThis->m_aClients[ClientID].m_RequestedMapOption = -1;
 	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 	pThis->m_aClients[ClientID].Reset();
 
@@ -1030,7 +1048,9 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_TrafficSince = 0;
 	pThis->m_aClients[ClientID].m_ShowIps = false;
 	memset(&pThis->m_aClients[ClientID].m_Addr, 0, sizeof(NETADDR));
-	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_ChangingMapOption = false;
+	pThis->m_aClients[ClientID].m_UsedMapOption = -1;
+	pThis->m_aClients[ClientID].m_RequestedMapOption = -1;
 	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 	pThis->m_aClients[ClientID].Reset();
 
@@ -1118,7 +1138,9 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aPrevStates[ClientID] = CClient::STATE_EMPTY;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	pThis->m_aClients[ClientID].m_Sixup = false;
-	pThis->m_aClients[ClientID].m_MapOption = -1;
+	pThis->m_aClients[ClientID].m_ChangingMapOption = false;
+	pThis->m_aClients[ClientID].m_UsedMapOption = -1;
+	pThis->m_aClients[ClientID].m_RequestedMapOption = -1;
 	pThis->m_aClients[ClientID].m_LastMapChangedTick = -1;
 
 	pThis->GameServer()->OnClientEngineDrop(ClientID, pReason);
@@ -1155,7 +1177,7 @@ void CServer::SendCapabilities(int ClientID)
 void CServer::SendMap(int ClientID)
 {
 	int Sixup = IsSixup(ClientID);
-	int ClientMapOption = m_aClients[ClientID].m_MapOption;
+	int ClientMapOption = m_aClients[ClientID].m_UsedMapOption;
 	int MapOption = ClientMapOption >= 0 ? ClientMapOption * 2 + Sixup : Sixup;
 	{
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
@@ -1185,7 +1207,7 @@ void CServer::SendMap(int ClientID)
 void CServer::SendMapData(int ClientID, int Chunk)
 {
 	int Sixup = IsSixup(ClientID);
-	int ClientMapOption = m_aClients[ClientID].m_MapOption;
+	int ClientMapOption = m_aClients[ClientID].m_UsedMapOption;
 	int MapOption = ClientMapOption >= 0 ? ClientMapOption * 2 + Sixup : Sixup;
 	unsigned int ChunkSize = 1024-128;
 	unsigned int Offset = Chunk * ChunkSize;
@@ -1557,6 +1579,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					SendMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID);
 				}
 				GameServer()->OnClientEnter(ClientID);
+				m_aClients[ClientID].m_ChangingMapOption = false;
 			}
 		}
 		else if(Msg == NETMSG_INPUT)
@@ -2548,6 +2571,11 @@ int CServer::Run()
 					str_copy(g_Config.m_SvMap, m_aCurrentMap, sizeof(g_Config.m_SvMap));
 				}
 			}
+
+			if (g_Config.m_SvMapOptionsCount > 1)
+				for (int ClientID = 0; ClientID < MAX_CLIENTS; ClientID++)
+					if (m_aClients[ClientID].m_RequestedMapOption != -1 && m_aClients[ClientID].m_UsedMapOption != m_aClients[ClientID].m_RequestedMapOption)
+						SendRequestedMapOption(ClientID);
 
 			// handle dnsbl
 			if (g_Config.m_SvDnsbl)

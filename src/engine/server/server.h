@@ -204,7 +204,9 @@ public:
 
 		bool m_Sixup;
 
-		int m_MapOption;
+		bool m_ChangingMapOption;
+		int m_RequestedMapOption;
+		int m_UsedMapOption;
 		int m_LastMapChangedTick;
 	};
 
@@ -274,6 +276,8 @@ public:
 	virtual int GetClientLastMapChangedTick(int ClientID);
 	virtual int GetClientMapOption(int ClientID);
 	virtual bool SetClientMapOption(int ClientID, int MapOption);
+	virtual bool IsClientChangeMapOption(int ClientID);
+	virtual void SendRequestedMapOption(int ClientID);
 
 	void Kick(int ClientID, const char *pReason);
 	void Ban(int ClientID, int Seconds, const char *pReason);
