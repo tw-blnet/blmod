@@ -667,7 +667,7 @@ void CGameTeams::OnFinish(CPlayer* Player, float Time, const char *pTimestamp)
 	int TTime = 0 - (int)Time;
 	if (Player->m_Score < TTime || !Player->m_HasFinishScore)
 	{
-		Player->m_Score = TTime;
+		// Player->m_Score = TTime;
 		Player->m_HasFinishScore = true;
 	}
 }

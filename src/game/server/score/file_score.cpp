@@ -193,7 +193,7 @@ void CFileScore::UpdatePlayer(int ID, float Score,
 		for (int c = 0; c < NUM_CHECKPOINTS; c++)
 			pPlayer->m_aCpTime[c] = aCpTime[c];
 
-		pPlayer->m_Score = Score;
+		// pPlayer->m_Score = Score;
 		str_copy(pPlayer->m_aName, pName, sizeof(pPlayer->m_aName));
 
 		sort(m_Top.all());
