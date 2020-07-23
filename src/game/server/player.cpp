@@ -125,6 +125,7 @@ void CPlayer::Reset()
 	m_ScoreQueryResult = nullptr;
 	m_ScoreFinishResult = nullptr;
 	m_ScoreAuthResult = nullptr;
+	m_ScoreExperienceResult = nullptr;
 
 	int64 Now = Server()->Tick();
 	int64 TickSpeed = Server()->TickSpeed();
@@ -184,6 +185,11 @@ void CPlayer::Tick()
 	{
 		ProcessAuthResult(*m_ScoreAuthResult);
 		m_ScoreAuthResult = nullptr;
+	}
+	if(m_ScoreExperienceResult != nullptr && m_ScoreExperienceResult.use_count() == 1)
+	{
+		ProcessExperienceResult(*m_ScoreExperienceResult);
+		m_ScoreExperienceResult = nullptr;
 	}
 
 	if(!Server()->ClientIngame(m_ClientID))
@@ -936,6 +942,33 @@ void CPlayer::SpectatePlayerName(const char *pName)
 	}
 }
 
+void CPlayer::ShowLevelProgress(int ExperienceIncrement)
+{
+	char aBuf[256];
+
+	if (m_Account.m_Authenticated)
+	{
+		int NextLevelExp = GameServer()->Score()->ExperienceRequired(m_Account.m_Level+1);
+
+		if (ExperienceIncrement)
+			str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d (+%d)", m_Account.m_Level, m_Account.m_Experience, NextLevelExp, ExperienceIncrement);
+		else
+			str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d", m_Account.m_Level, m_Account.m_Experience, NextLevelExp);
+	}
+	else
+	{
+		str_format(aBuf, sizeof(aBuf), "Login to get experience\nUse /register to create account");
+	}
+
+	// fill rest of string with spaces to align broadcast to left
+	size_t Pos = 0;
+	for (Pos = 0; aBuf[Pos] && Pos < sizeof(aBuf); Pos++);
+	for (; Pos < sizeof(aBuf)-1; aBuf[Pos]=' ', Pos++);
+	aBuf[sizeof(aBuf)-1] = 0;
+
+	GameServer()->SendBroadcast(aBuf, m_ClientID);
+}
+
 void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 {
 	if(Result.m_Done) // SQL request was successful
@@ -1030,6 +1063,8 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 				m_Account.m_Level = Result.m_Data.m_Login.m_Level;
 				m_Score = m_Account.m_Level;
 
+				ShowLevelProgress();
+
 				if (Result.m_Data.m_Login.m_RconLevel > 0)
 					((CServer*) Server())->ForceAuth(m_ClientID, Result.m_Data.m_Login.m_RconLevel);
 
@@ -1081,5 +1116,36 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 				break;
 			}
 		}
+	}
+}
+
+void CPlayer::ProcessExperienceResult(CScoreExperienceResult &Result)
+{
+	if(!m_Account.m_Authenticated)
+	{
+		ShowLevelProgress(); // show tip to create account
+		return;
+	}
+
+	if(Result.m_Done)
+	{
+		if (Result.m_Level < 0)
+		{
+			GameServer()->SendChatTarget(m_ClientID, "Error! Can't give experience");
+			return;
+		}
+
+		if (Result.m_LevelUp)
+		{
+			GameServer()->CreateSound(m_pCharacter->m_Pos, SOUND_CTF_CAPTURE, CmaskOne(m_ClientID));
+			if (m_pCharacter)
+				m_pCharacter->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
+		}
+
+		m_Account.m_Experience = Result.m_Experience;
+		m_Account.m_Level = Result.m_Level;
+		m_Score = m_Account.m_Level;
+
+		ShowLevelProgress(Result.m_ExperienceIncrement);
 	}
 }

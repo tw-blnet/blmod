@@ -143,6 +143,16 @@ struct CScoreAuthResult
 	} m_Data;
 };
 
+struct CScoreExperienceResult
+{
+	std::atomic_bool m_Done = ATOMIC_VAR_INIT(false);
+
+	bool m_LevelUp;
+	int m_Level;
+	int m_Experience;
+	int m_ExperienceIncrement;
+};
+
 class CPlayerData
 {
 public:
@@ -212,6 +222,9 @@ public:
 	virtual void Login(int ClientID, const char* Username, const char* Password) = 0;
 	virtual void Logout(int ClientID) = 0;
 	virtual void ChangePassword(int ClientID, const char* Password) = 0;
+
+	static int ExperienceRequired(int Level);
+	virtual void GiveExperience(int ClientID, int Count) = 0;
 
 	// called when the server is shut down but not on mapchange/reload
 	virtual void OnShutdown() = 0;

@@ -33,3 +33,8 @@ void CScorePlayerResult::SetVariant(Variant v)
 			m_Data.m_Info.m_CpTime[i] = 0;
 	}
 }
+
+int IScore::ExperienceRequired(int Level)
+{
+	return round_to_int(15 + powf(Level, 1.6f));
+}

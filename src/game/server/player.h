@@ -200,11 +200,14 @@ public:
 	bool m_Halloween;
 	bool m_FirstPacket;
 	int64 m_LastSQLQuery;
+	void ShowLevelProgress(int ExperienceIncrement=0);
 	void ProcessScoreResult(CScorePlayerResult &Result);
 	std::shared_ptr<CScorePlayerResult> m_ScoreQueryResult;
 	std::shared_ptr<CScorePlayerResult> m_ScoreFinishResult;
 	void ProcessAuthResult(CScoreAuthResult &Result);
 	std::shared_ptr<CScoreAuthResult> m_ScoreAuthResult;
+	void ProcessExperienceResult(CScoreExperienceResult &Result);
+	std::shared_ptr<CScoreExperienceResult> m_ScoreExperienceResult;
 	bool m_NotEligibleForFinish;
 	int64 m_EligibleForFinishCheck;
 	bool m_VotedForPractice;

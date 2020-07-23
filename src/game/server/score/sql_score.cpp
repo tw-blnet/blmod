@@ -2139,5 +2139,83 @@ bool CSqlScore::ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CSco
 	return false;
 }
 
+void CSqlScore::GiveExperience(int ClientID, int Count)
+{
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	if (!pCurPlayer)
+		return;
+
+	pCurPlayer->m_ScoreExperienceResult = std::make_shared<CScoreExperienceResult>();
+	if (!pCurPlayer->m_Account.m_Authenticated)
+		return;
+
+	CSqlExperienceData *Tmp = new CSqlExperienceData(pCurPlayer->m_ScoreExperienceResult);
+	Tmp->m_UserID = pCurPlayer->m_Account.m_UserID;
+	Tmp->m_Count = Count;
+
+	thread_init_and_detach(CSqlExecData<CScoreExperienceResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreExperienceResult>(GiveExperienceThread, Tmp),
+			"update experience");
+}
+
+bool CSqlScore::GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CScoreExperienceResult> *pGameData, bool HandleFailure)
+{
+	const CSqlExperienceData *pData = dynamic_cast<const CSqlExperienceData *>(pGameData);
+	pData->m_pResult->m_Experience = -1;
+	pData->m_pResult->m_Level = -1;
+	pData->m_pResult->m_LevelUp = false;
+
+	if (HandleFailure)
+	{
+		pData->m_pResult->m_Done = true;
+		return true;
+	}
+
+	try
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT experience, level "
+				"FROM %s_users "
+				"WHERE id=%d;",
+			 pSqlServer->GetPrefix(), pData->m_UserID);
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if (!pSqlServer->GetResults()->next())
+		{
+			dbg_msg("sql", "Can't load experience info");
+			return false;
+		}
+
+		pData->m_pResult->m_Experience = pSqlServer->GetResults()->getInt("experience") + pData->m_Count;
+		pData->m_pResult->m_ExperienceIncrement = pData->m_Count;
+		pData->m_pResult->m_Level = pSqlServer->GetResults()->getInt("level");
+		pData->m_pResult->m_LevelUp = false;
+
+		while (pData->m_pResult->m_Experience >= ExperienceRequired(pData->m_pResult->m_Level+1))
+		{
+			pData->m_pResult->m_Experience -= ExperienceRequired(pData->m_pResult->m_Level+1);
+			pData->m_pResult->m_Level++;
+			pData->m_pResult->m_LevelUp = true;
+		}
+
+		str_format(aBuf, sizeof(aBuf),
+				"UPDATE %s_users "
+				"SET experience=%d, level=%d "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), pData->m_pResult->m_Experience, pData->m_pResult->m_Level, pData->m_UserID);
+		pSqlServer->executeSql(aBuf);
+
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "Experience update done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not update experience");
+	}
+	return false;
+}
 
 #endif

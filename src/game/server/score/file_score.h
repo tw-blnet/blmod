@@ -88,6 +88,8 @@ public:
 	virtual void Logout(int ClientID) {}
 	virtual void ChangePassword(int ClientID, const char* Password) {}
 
+	virtual void GiveExperience(int ClientID, int Count) {}
+
 	virtual void OnShutdown();
 
 private:
