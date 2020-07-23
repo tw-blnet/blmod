@@ -1010,7 +1010,7 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 					break;
 				}
 
-				char aBuf[64];
+				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "Account `%s` (id #%d) is registered! Now you can use /login", Result.m_Data.m_Register.m_Username, Result.m_Data.m_Register.m_UserID);
 				GameServer()->SendChatTarget(m_ClientID, aBuf);
 				break;
@@ -1030,7 +1030,7 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 				if (Result.m_Data.m_Login.m_RconLevel > 0)
 					((CServer*) Server())->ForceAuth(m_ClientID, Result.m_Data.m_Login.m_RconLevel);
 
-				char aBuf[64];
+				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "You have successfully logged in as %s (id #%d)!", m_Account.m_Username, m_Account.m_UserID);
 				GameServer()->SendChatTarget(m_ClientID, aBuf);
 
