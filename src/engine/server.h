@@ -225,6 +225,8 @@ public:
 
 	virtual void GetClientAddr(int ClientID, NETADDR *pAddr) = 0;
 
+	virtual bool IsClientsSameAddr(int FirstClientID, int SecondClientID) = 0;
+
 	virtual int* GetIdMap(int ClientID) = 0;
 
 	virtual bool DnsblWhite(int ClientID) = 0;

@@ -3732,6 +3732,15 @@ const char *CServer::GetAnnouncementLine(char const *pFileName)
 	return v[m_AnnouncementLastLine];
 }
 
+bool CServer::IsClientsSameAddr(int FirstClientID, int SecondClientID)
+{
+	NETADDR FirstAddr, SecondAddr;
+	GetClientAddr(FirstClientID, &FirstAddr);
+	GetClientAddr(SecondClientID, &SecondAddr);
+
+	return net_addr_comp_noport(&FirstAddr, &SecondAddr) == 0;
+}
+
 int *CServer::GetIdMap(int ClientID)
 {
 	return IdMap + VANILLA_MAX_CLIENTS * ClientID;

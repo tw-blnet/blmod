@@ -439,6 +439,8 @@ public:
 	unsigned m_AnnouncementLastLine;
 	void RestrictRconOutput(int ClientID) { m_RconRestrict = ClientID; }
 
+	virtual bool IsClientsSameAddr(int FirstClientID, int SecondClientID);
+
 	virtual int* GetIdMap(int ClientID);
 
 	void InitDnsbl(int ClientID);
