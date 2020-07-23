@@ -124,6 +124,8 @@ struct CScoreAuthResult
 			int m_UserID;
 			char m_Username[32];
 			int m_RconLevel;
+			int m_Level;
+			int m_Experience;
 		} m_Login;
 
 		struct

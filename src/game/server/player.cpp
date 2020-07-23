@@ -1026,6 +1026,9 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 				m_Account.m_UserID = Result.m_Data.m_Login.m_UserID;
 				str_copy(m_Account.m_Username, Result.m_Data.m_Register.m_Username, 32);
 				m_Account.m_Authenticated = true;
+				m_Account.m_Experience = Result.m_Data.m_Login.m_Experience;
+				m_Account.m_Level = Result.m_Data.m_Login.m_Level;
+				m_Score = m_Account.m_Level;
 
 				if (Result.m_Data.m_Login.m_RconLevel > 0)
 					((CServer*) Server())->ForceAuth(m_ClientID, Result.m_Data.m_Login.m_RconLevel);
@@ -1072,6 +1075,7 @@ void CPlayer::ProcessAuthResult(CScoreAuthResult &Result)
 				((CServer*) Server())->LogoutClient(m_ClientID, "/logout");
 
 				m_Account.m_Authenticated = false;
+				m_Score = 0;
 
 				GameServer()->SendChatTarget(m_ClientID, "You are logged out");
 				break;

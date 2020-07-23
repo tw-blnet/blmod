@@ -177,6 +177,8 @@ public:
 		bool m_Authenticated;
 		int m_UserID;
 		char m_Username[32];
+		int m_Level;
+		int m_Experience;
 	} m_Account;
 
 	bool AfkTimer(int new_target_x, int new_target_y); //returns true if kicked

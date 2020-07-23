@@ -2014,6 +2014,8 @@ bool CSqlScore::LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthRes
 	pData->m_pResult->m_Action = CScoreAuthResult::LOGIN;
 	pData->m_pResult->m_Data.m_Login.m_UserID = -1;
 	pData->m_pResult->m_Data.m_Login.m_RconLevel = 0;
+	pData->m_pResult->m_Data.m_Login.m_Level = 0;
+	pData->m_pResult->m_Data.m_Login.m_Experience = 0;
 
 	if (HandleFailure)
 	{
@@ -2025,7 +2027,7 @@ bool CSqlScore::LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthRes
 	{
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf),
-				"SELECT id, rcon_lvl "
+				"SELECT id, rcon_level, level, experience "
 				"FROM %s_users "
 				"WHERE username='%s' AND password='%s' "
 				"LIMIT 1;",
@@ -2035,10 +2037,14 @@ bool CSqlScore::LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthRes
 		if(pSqlServer->GetResults()->next())
 		{
 			int UserID = (int)pSqlServer->GetResults()->getInt("id");
-			int RconLevel = (int)pSqlServer->GetResults()->getInt("rcon_lvl");
+			int RconLevel = (int)pSqlServer->GetResults()->getInt("rcon_level");
+			int Level = (int)pSqlServer->GetResults()->getInt("level");
+			int Experience = (int)pSqlServer->GetResults()->getInt("experience");
 
 			pData->m_pResult->m_Data.m_Login.m_UserID = UserID;
 			pData->m_pResult->m_Data.m_Login.m_RconLevel = RconLevel;
+			pData->m_pResult->m_Data.m_Login.m_Level = Level;
+			pData->m_pResult->m_Data.m_Login.m_Experience = Experience;
 			str_copy(pData->m_pResult->m_Data.m_Login.m_Username, pData->m_Username.Str(), 32);
 		}
 		else
