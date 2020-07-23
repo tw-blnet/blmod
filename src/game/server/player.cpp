@@ -25,10 +25,12 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_NumInputs = 0;
 	Reset();
 	GameServer()->Antibot()->OnPlayerInit(m_ClientID);
+	GameServer()->m_pController->m_BlockTracker.StartTrackPlayer(m_ClientID);
 }
 
 CPlayer::~CPlayer()
 {
+	GameServer()->m_pController->m_BlockTracker.StopTrackPlayer(m_ClientID);
 	GameServer()->Antibot()->OnPlayerDestroy(m_ClientID);
 	delete m_pLastTarget;
 	delete m_pCharacter;
@@ -767,19 +769,25 @@ bool CPlayer::AfkTimer(int NewTargetX, int NewTargetY)
 		returns true if kicked
 	*/
 
+	bool SetWarning = false;
+	if(NewTargetX != m_LastTarget_x || NewTargetY != m_LastTarget_y)
+	{
+		GameServer()->m_pController->m_BlockTracker.OnPlayerAction(m_ClientID);
+		m_LastPlaytime = time_get();
+		m_LastTarget_x = NewTargetX;
+		m_LastTarget_y = NewTargetY;
+		SetWarning = true;
+	}
+
 	if(Server()->GetAuthedState(m_ClientID))
 		return false; // don't kick admins
 	if(g_Config.m_SvMaxAfkTime == 0)
 		return false; // 0 = disabled
 
-	if(NewTargetX != m_LastTarget_x || NewTargetY != m_LastTarget_y)
+	if(SetWarning)
 	{
-		m_LastPlaytime = time_get();
-		m_LastTarget_x = NewTargetX;
-		m_LastTarget_y = NewTargetY;
 		m_Sent1stAfkWarning = 0; // afk timer's 1st warning after 50% of sv_max_afk_time
 		m_Sent2ndAfkWarning = 0;
-
 	}
 	else
 	{

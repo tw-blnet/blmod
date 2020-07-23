@@ -6,6 +6,7 @@
 #include <base/vmath.h>
 #include <engine/map.h>
 #include <game/server/arenas.h>
+#include <game/server/blocktracker.h>
 #include <game/server/entities/flag.h>
 
 class CDoor;
@@ -77,6 +78,7 @@ public:
 	CFlag* m_apFlags[2] = {0};
 
 	CArenasManager m_ArenasManager;
+	CBlockTracker m_BlockTracker;
 
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();

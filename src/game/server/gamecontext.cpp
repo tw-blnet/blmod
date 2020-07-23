@@ -253,6 +253,8 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 				TeamMask = CmaskUnset(TeamMask, PlayerTeam);
 			}
 
+			m_pController->m_BlockTracker.OnPlayerImpacted(apEnts[i]->GetPlayer()->GetCID(), Owner);
+
 			apEnts[i]->TakeDamage(ForceDir*Dmg*2, (int)Dmg, Owner, Weapon);
 		}
 	}

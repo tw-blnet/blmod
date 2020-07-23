@@ -68,6 +68,8 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	{
 		pHit->UnFreeze();
 	}
+
+	GameServer()->m_pController->m_BlockTracker.OnPlayerImpacted(pHit->GetPlayer()->GetCID(), m_Owner);
 	return true;
 }
 

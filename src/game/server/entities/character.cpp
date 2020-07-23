@@ -461,6 +461,7 @@ void CCharacter::FireWeapon()
 					pTarget->Freeze();
 
 				Antibot()->OnHammerHit(m_pPlayer->GetCID());
+				GameServer()->m_pController->m_BlockTracker.OnPlayerImpacted(pTarget->m_pPlayer->GetCID(), m_pPlayer->GetCID());
 
 				Hits++;
 			}
@@ -912,6 +913,7 @@ void CCharacter::Tick()
 			&& GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetTeam() != -1)
 		{
 			Antibot()->OnHookAttach(m_pPlayer->GetCID(), true);
+			GameServer()->m_pController->m_BlockTracker.OnPlayerImpacted(m_Core.m_HookedPlayer, m_pPlayer->GetCID());
 		}
 	}
 
@@ -1043,6 +1045,8 @@ void CCharacter::Die(int Killer, int Weapon)
 	bool CanDie = GameServer()->m_pController->m_ArenasManager.HandleDeath(m_pPlayer->GetCID());
 	if (!CanDie)
 		return;
+
+	GameServer()->m_pController->m_BlockTracker.OnPlayerKill(m_pPlayer->GetCID());
 
 	if(Server()->IsRecording(m_pPlayer->GetCID()))
 		Server()->StopRecord(m_pPlayer->GetCID());
@@ -2464,6 +2468,9 @@ bool CCharacter::Freeze(int Seconds)
 		m_Armor = 0;
 		m_FreezeTime = Seconds == -1 ? Seconds : Seconds * Server()->TickSpeed();
 		m_FreezeTick = Server()->Tick();
+
+		GameServer()->m_pController->m_BlockTracker.OnPlayerFreeze(m_pPlayer->GetCID());
+
 		return true;
 	}
 	return false;
@@ -2484,6 +2491,9 @@ bool CCharacter::UnFreeze()
 		m_FreezeTime = 0;
 		m_FreezeTick = 0;
 		m_FrozenLastTick = true;
+
+		GameServer()->m_pController->m_BlockTracker.OnPlayerUnfreeze(m_pPlayer->GetCID());
+
 		return true;
 	}
 	return false;
