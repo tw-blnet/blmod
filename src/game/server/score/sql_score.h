@@ -123,6 +123,13 @@ struct CSqlExperienceData : CSqlData<CScoreExperienceResult>
 	int m_Count;
 };
 
+struct CSqlRegisterStatsData : CSqlData<void>
+{
+	using CSqlData<void>::CSqlData;
+	int m_UserID;
+	int m_Action;
+};
+
 // controls one thread
 template < typename TResult >
 struct CSqlExecData
@@ -176,6 +183,8 @@ class CSqlScore: public IScore
 	static bool ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
 
 	static bool GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CScoreExperienceResult> *pGameData, bool HandleFailure = false);
+
+	static bool RegisterStatsThread(CSqlServer* pSqlServer, const CSqlData<void> *pGameData, bool HandleFailure = false);
 
 	CGameContext *GameServer() { return m_pGameServer; }
 	IServer *Server() { return m_pServer; }
@@ -242,6 +251,8 @@ public:
 	virtual void ChangePassword(int ClientID, const char* Password);
 
 	virtual void GiveExperience(int ClientID, int Count);
+
+	virtual void RegisterStats(int ClientID, int Action);
 
 	virtual void OnShutdown();
 };

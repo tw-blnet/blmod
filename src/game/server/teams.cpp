@@ -604,6 +604,8 @@ void CGameTeams::OnFinish(CPlayer* Player, float Time, const char *pTimestamp)
 			GameServer()->Score()->SaveScore(ClientID, Time, pTimestamp,
 					GetCpCurrent(Player), Player->m_NotEligibleForFinish);
 
+	m_pGameContext->Score()->RegisterStats(ClientID, ACTION_RACE);
+
 	bool NeedToSendNewRecord = false;
 	// update server best time
 	if (GameServer()->m_pController->m_CurrentRecord == 0

@@ -203,7 +203,10 @@ bool CSqlServer::CreateTables()
 			"last_login_ip INT UNSIGNED,"
 			"rcon_level TINYINT NOT NULL DEFAULT 0,"
 			"level INT NOT NULL DEFAULT 0,"
-			"experience INT NOT NULL DEFAULT 0"
+			"experience INT NOT NULL DEFAULT 0,"
+			"stats_block_kills INT NOT NULL DEFAULT 0,"
+			"stats_block_deaths INT NOT NULL DEFAULT 0,"
+			"stats_races INT NOT NULL DEFAULT 0"
 		") CHARACTER SET utf8mb4;", m_aPrefix);
 		executeSql(aBuf);
 

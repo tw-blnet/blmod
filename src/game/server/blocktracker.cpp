@@ -22,6 +22,8 @@ bool CBlockTracker::Blocked(int ClientID, int BlockerID)
     if (m_pGameContext->Server()->IsClientsSameAddr(ClientID, BlockerID)) return false;
 
     m_pGameContext->Score()->GiveExperience(BlockerID, g_Config.m_SvBlockExperience);
+    m_pGameContext->Score()->RegisterStats(BlockerID, ACTION_BLOCK_KILL);
+    m_pGameContext->Score()->RegisterStats(ClientID, ACTION_BLOCK_DEATH);
 
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Killer = BlockerID;

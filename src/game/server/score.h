@@ -153,6 +153,13 @@ struct CScoreExperienceResult
 	int m_ExperienceIncrement;
 };
 
+enum
+{
+	ACTION_BLOCK_KILL,
+	ACTION_BLOCK_DEATH,
+	ACTION_RACE,
+};
+
 class CPlayerData
 {
 public:
@@ -225,6 +232,8 @@ public:
 
 	static int ExperienceRequired(int Level);
 	virtual void GiveExperience(int ClientID, int Count) = 0;
+
+	virtual void RegisterStats(int ClientID, int Action) = 0;
 
 	// called when the server is shut down but not on mapchange/reload
 	virtual void OnShutdown() = 0;

@@ -2218,4 +2218,58 @@ bool CSqlScore::GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CSco
 	return false;
 }
 
+void CSqlScore::RegisterStats(int ClientID, int Action)
+{
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	if (!pCurPlayer || !pCurPlayer->m_Account.m_Authenticated)
+		return;
+
+	CSqlRegisterStatsData *Tmp = new CSqlRegisterStatsData(nullptr);
+	Tmp->m_UserID = pCurPlayer->m_Account.m_UserID;
+	Tmp->m_Action = Action;
+
+	thread_init_and_detach(CSqlExecData<void>::ExecSqlFunc,
+			new CSqlExecData<void>(RegisterStatsThread, Tmp),
+			"register stats");
+}
+
+bool CSqlScore::RegisterStatsThread(CSqlServer* pSqlServer, const CSqlData<void> *pGameData, bool HandleFailure)
+{
+	const CSqlRegisterStatsData *pData = dynamic_cast<const CSqlRegisterStatsData *>(pGameData);
+
+	if (HandleFailure)
+	{
+		return true;
+	}
+
+	try
+	{
+		char aBuf[512];
+
+		const std::map<int, const char*> ActionsFields =
+		{
+			{ACTION_BLOCK_KILL, "stats_block_kills"},
+			{ACTION_BLOCK_DEATH, "stats_block_deaths"},
+			{ACTION_RACE, "stats_races"},
+		};
+
+		const char* ActionField = ActionsFields.at(pData->m_Action);
+		str_format(aBuf, sizeof(aBuf),
+				"UPDATE %s_users "
+				"SET %s=%s+1 "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), ActionField, ActionField, pData->m_UserID);
+		pSqlServer->executeSql(aBuf);
+
+		dbg_msg("sql", "Statistics registration done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not register statistics");
+	}
+	return false;
+}
+
 #endif
