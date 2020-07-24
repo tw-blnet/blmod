@@ -45,7 +45,7 @@ public:
     void OnPlayerFreeze(int ClientID);
     void OnPlayerUnfreeze(int ClientID);
     void OnPlayerImpacted(int ClientID, int InitiatorID);
-    void OnPlayerKill(int ClientID);
+    bool OnPlayerKill(int ClientID);
 };
 
 #endif

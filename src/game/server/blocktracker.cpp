@@ -21,6 +21,14 @@ bool CBlockTracker::Blocked(int ClientID, int BlockerID)
     if (m_pGameContext->Server()->IsClientsSameAddr(ClientID, BlockerID)) return false;
 
     m_pGameContext->Score()->GiveExperience(BlockerID, EXPERIENCE_FOR_BLOCK);
+
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = BlockerID;
+	Msg.m_Victim = ClientID;
+	Msg.m_Weapon = WEAPON_NINJA;
+	Msg.m_ModeSpecial = 0;
+	m_pGameContext->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+
     return true;
 }
 
@@ -111,14 +119,15 @@ void CBlockTracker::OnPlayerImpacted(int ClientID, int InitiatorID)
     m_aTrackedPlayers[ClientID].m_LastImpactedTick = m_pGameContext->Server()->Tick();
 }
 
-void CBlockTracker::OnPlayerKill(int ClientID)
+bool CBlockTracker::OnPlayerKill(int ClientID)
 {
-    if (!m_aTrackedPlayers[ClientID].m_Tracked) return;
+    if (!m_aTrackedPlayers[ClientID].m_Tracked) return false;
 
+    bool Result = false;
     if (m_aTrackedPlayers[ClientID].m_ImpactedClientID != -1 &&
         m_aTrackedPlayers[ClientID].m_FreezedTick != -1 &&
         SecondsPassed(m_aTrackedPlayers[ClientID].m_KilledTick) > KILL_INTERVAL_SECONDS)
-        Blocked(ClientID, m_aTrackedPlayers[ClientID].m_ImpactedClientID);
+        Result = Blocked(ClientID, m_aTrackedPlayers[ClientID].m_ImpactedClientID);
 
     m_aTrackedPlayers[ClientID].m_IsResisted = false;
     m_aTrackedPlayers[ClientID].m_LastActionTick = -1;
@@ -127,4 +136,6 @@ void CBlockTracker::OnPlayerKill(int ClientID)
     m_aTrackedPlayers[ClientID].m_FreezedTick = -1;
     m_aTrackedPlayers[ClientID].m_UnfreezedTick = m_pGameContext->Server()->Tick();
     m_aTrackedPlayers[ClientID].m_KilledTick = m_pGameContext->Server()->Tick();
+
+    return Result;
 }
