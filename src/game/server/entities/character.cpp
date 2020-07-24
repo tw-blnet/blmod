@@ -1042,11 +1042,11 @@ bool CCharacter::IncreaseArmor(int Amount)
 
 void CCharacter::Die(int Killer, int Weapon)
 {
+	bool Blocked = GameServer()->m_pController->m_BlockTracker.OnPlayerKill(m_pPlayer->GetCID());
+
 	bool CanDie = GameServer()->m_pController->m_ArenasManager.HandleDeath(m_pPlayer->GetCID());
 	if (!CanDie)
 		return;
-
-	bool Blocked = GameServer()->m_pController->m_BlockTracker.OnPlayerKill(m_pPlayer->GetCID());
 
 	if(Server()->IsRecording(m_pPlayer->GetCID()))
 		Server()->StopRecord(m_pPlayer->GetCID());
