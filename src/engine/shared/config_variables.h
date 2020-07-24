@@ -318,6 +318,14 @@ MACRO_CONFIG_INT(SvAllowArenas, sv_allow_1vs1, 1, 0, 1, CFGFLAG_SERVER, "Allow 1
 MACRO_CONFIG_INT(SvAccountLogin, sv_account_login, 1, 0, 1, CFGFLAG_SERVER, "Allow login")
 MACRO_CONFIG_INT(SvAccountRegister, sv_account_register, 1, 0, 1, CFGFLAG_SERVER, "Allow register new account")
 
+MACRO_CONFIG_INT(SvBlockExperience, sv_block_experience, 1, 0, 0, CFGFLAG_SERVER, "Count of awarded experience points for registered block")
+MACRO_CONFIG_INT(SvBlockFreezedInterval, sv_block_freezed, 4, 0, 0, CFGFLAG_SERVER, "How long player have to be frozen to be blocked")
+MACRO_CONFIG_INT(SvBlockResetUnfreezedInterval, sv_block_reset_unfreezed, 3, 0, 0, CFGFLAG_SERVER, "How long player have to be not frozen to lost impact of enemy")
+MACRO_CONFIG_INT(SvBlockResetNoImpactInterval, sv_block_reset_no_impact, 2, 0, 0, CFGFLAG_SERVER, "How long impact of enemy is remembered after unfreeze")
+MACRO_CONFIG_INT(SvBlockImpactIntervalToResist, sv_block_impact_interval_to_resist, 5, 0, 0, CFGFLAG_SERVER, "How long impact of enemy is remembered after unfreeze")
+MACRO_CONFIG_INT(SvBlockUnfreezeNoImpactInterval, sv_block_unfreeze_no_impact_interval, 3, 0, 0, CFGFLAG_SERVER, "How long ago player must be impacted to be blocked")
+MACRO_CONFIG_INT(SvBlockKillInterval, sv_block_kill_interval, 5, 0, 0, CFGFLAG_SERVER, "How long ago must player die to be blocked")
+
 // these might need some fine tuning
 MACRO_CONFIG_INT(SvChatPenalty, sv_chat_penalty, 250, 50, 1000, CFGFLAG_SERVER, "chat score will be increased by this on every message, and decremented by 1 on every tick.")
 MACRO_CONFIG_INT(SvChatThreshold, sv_chat_threshold, 1000, 50, 10000 , CFGFLAG_SERVER, "if chats core exceeds this, the player will be muted for sv_spam_mute_duration seconds")

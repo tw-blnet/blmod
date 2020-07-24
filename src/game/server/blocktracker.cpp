@@ -1,4 +1,5 @@
 #include "blocktracker.h"
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 CBlockTracker::CBlockTracker(class CGameContext *pGameServer) : m_pGameContext(pGameServer)
@@ -20,7 +21,7 @@ bool CBlockTracker::Blocked(int ClientID, int BlockerID)
     if (!m_pGameContext->PlayerExists(ClientID) || !m_pGameContext->PlayerExists(BlockerID)) return false;
     if (m_pGameContext->Server()->IsClientsSameAddr(ClientID, BlockerID)) return false;
 
-    m_pGameContext->Score()->GiveExperience(BlockerID, EXPERIENCE_FOR_BLOCK);
+    m_pGameContext->Score()->GiveExperience(BlockerID, g_Config.m_SvBlockExperience);
 
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Killer = BlockerID;
@@ -41,7 +42,7 @@ void CBlockTracker::Tick()
         if (!Player.m_Tracked) continue;
 
         if (Player.m_FreezedTick >= 0 &&
-            SecondsPassed(Player.m_FreezedTick) >= FREEZED_TO_BLOCK_SECONDS &&
+            SecondsPassed(Player.m_FreezedTick) >= g_Config.m_SvBlockFreezedInterval &&
             Player.m_ImpactedClientID >= 0)
         {
             if (Blocked(ClientID, Player.m_ImpactedClientID))
@@ -53,8 +54,8 @@ void CBlockTracker::Tick()
         }
 
         if (Player.m_UnfreezedTick >= 0 &&
-            SecondsPassed(Player.m_UnfreezedTick) > UNFREEZED_TO_RESET_SECONDS &&
-            SecondsPassed(Player.m_LastImpactedTick) > NO_IMPACT_TO_RESET_SECONDS)
+            SecondsPassed(Player.m_UnfreezedTick) > g_Config.m_SvBlockResetUnfreezedInterval &&
+            SecondsPassed(Player.m_LastImpactedTick) > g_Config.m_SvBlockResetNoImpactInterval)
         {
             Player.m_ImpactedClientID = -1;
             Player.m_LastImpactedTick = -1;
@@ -95,7 +96,7 @@ void CBlockTracker::OnPlayerFreeze(int ClientID)
     m_aTrackedPlayers[ClientID].m_FreezedTick = m_pGameContext->Server()->Tick();
     m_aTrackedPlayers[ClientID].m_UnfreezedTick = -1;
 
-    if (SecondsPassed(m_aTrackedPlayers[ClientID].m_LastActionTick) < IMPACT_WINDOW_TO_RESIST_SECONDS)
+    if (SecondsPassed(m_aTrackedPlayers[ClientID].m_LastActionTick) < g_Config.m_SvBlockImpactIntervalToResist)
         m_aTrackedPlayers[ClientID].m_IsResisted = true;
 
 }
@@ -113,7 +114,7 @@ void CBlockTracker::OnPlayerImpacted(int ClientID, int InitiatorID)
     if (ClientID == InitiatorID) return;
     if (!m_aTrackedPlayers[ClientID].m_Tracked) return;
     if (m_aTrackedPlayers[ClientID].m_FreezedTick >= 0) return;
-    if (SecondsPassed(m_aTrackedPlayers[ClientID].m_UnfreezedTick) < NO_IMPACT_AFTER_UNFREEZE_SECONDS) return;
+    if (SecondsPassed(m_aTrackedPlayers[ClientID].m_UnfreezedTick) < g_Config.m_SvBlockUnfreezeNoImpactInterval) return;
 
     m_aTrackedPlayers[ClientID].m_ImpactedClientID = InitiatorID;
     m_aTrackedPlayers[ClientID].m_LastImpactedTick = m_pGameContext->Server()->Tick();
@@ -126,7 +127,7 @@ bool CBlockTracker::OnPlayerKill(int ClientID)
     bool Result = false;
     if (m_aTrackedPlayers[ClientID].m_ImpactedClientID != -1 &&
         m_aTrackedPlayers[ClientID].m_FreezedTick != -1 &&
-        SecondsPassed(m_aTrackedPlayers[ClientID].m_KilledTick) > KILL_INTERVAL_SECONDS)
+        SecondsPassed(m_aTrackedPlayers[ClientID].m_KilledTick) > g_Config.m_SvBlockKillInterval)
         Result = Blocked(ClientID, m_aTrackedPlayers[ClientID].m_ImpactedClientID);
 
     m_aTrackedPlayers[ClientID].m_IsResisted = false;
