@@ -1550,7 +1550,7 @@ static bool ValidateUsername(const char* Username)
 	}
 
 	int UsernameLength = str_length(Username);
-	if (UsernameLength < 3)
+	if (UsernameLength < 3 || UsernameLength > MAX_USERNAME_LENGTH)
 		return false;
 
 	return true;
@@ -1559,7 +1559,7 @@ static bool ValidateUsername(const char* Username)
 static bool ValidatePassword(const char* Password)
 {
 	int PasswordLength = str_length(Password);
-	if (PasswordLength < 8)
+	if (PasswordLength < 8 || PasswordLength > MAX_PASSWORD_LENGTH)
 		return false;
 
 	return true;
@@ -1586,15 +1586,18 @@ void CGameContext::ConRegister(IConsole::IResult *pResult, void *pUserData)
 	const char* Username = pResult->GetString(0);
 	const char* Password = pResult->GetString(1);
 
+	char aBuf[128];
 	if (!ValidateUsername(Username))
 	{
-		pSelf->SendChatTarget(pResult->m_ClientID, "Username have to contain at least 3 characters and only use these characters: a-z A-Z 0-9");
+		str_format(aBuf, sizeof(aBuf), "Username must contain 3-%d characters and only use these: a-z A-Z 0-9", MAX_USERNAME_LENGTH);
+		pSelf->SendChatTarget(pResult->m_ClientID, aBuf);
 		return;
 	}
 
 	if (!ValidatePassword(Password))
 	{
-		pSelf->SendChatTarget(pResult->m_ClientID, "Password have to contain at least 8 characters");
+		str_format(aBuf, sizeof(aBuf), "Password must contain 8-%d characters", MAX_PASSWORD_LENGTH);
+		pSelf->SendChatTarget(pResult->m_ClientID, aBuf);
 		return;
 	}
 
