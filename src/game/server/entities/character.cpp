@@ -1144,7 +1144,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
 	{
-		int64_t Mask = CmaskOne(From);
+		int64 Mask = CmaskOne(From);
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && GameServer()->m_apPlayers[i]->m_SpectatorID == From)
@@ -1358,9 +1358,9 @@ void CCharacter::SnapCharacter(int SnappingClient, int ID)
 
 void CCharacter::Snap(int SnappingClient)
 {
-	int id = m_pPlayer->GetCID();
+	int ID = m_pPlayer->GetCID();
 
-	if(SnappingClient > -1 && !Server()->Translate(id, SnappingClient))
+	if(SnappingClient > -1 && !Server()->Translate(ID, SnappingClient))
 		return;
 
 	if(NetworkClipped(SnappingClient))
@@ -1368,28 +1368,26 @@ void CCharacter::Snap(int SnappingClient)
 
 	if(SnappingClient > -1)
 	{
-		CCharacter* SnapChar = GameServer()->GetPlayerChar(SnappingClient);
-		CPlayer* SnapPlayer = GameServer()->m_apPlayers[SnappingClient];
+		CCharacter *pSnapChar = GameServer()->GetPlayerChar(SnappingClient);
+		CPlayer *pSnapPlayer = GameServer()->m_apPlayers[SnappingClient];
 
-		if((SnapPlayer->GetTeam() == TEAM_SPECTATORS || SnapPlayer->IsPaused()) && SnapPlayer->m_SpectatorID != -1
-			&& !CanCollide(SnapPlayer->m_SpectatorID) && !SnapPlayer->m_ShowOthers)
-			return;
-
-		if( SnapPlayer->GetTeam() != TEAM_SPECTATORS && !SnapPlayer->IsPaused() && SnapChar && !SnapChar->m_Super
-			&& !CanCollide(SnappingClient) && !SnapPlayer->m_ShowOthers)
-			return;
-
-		if((SnapPlayer->GetTeam() == TEAM_SPECTATORS || SnapPlayer->IsPaused()) && SnapPlayer->m_SpectatorID == -1
-			&& !CanCollide(SnappingClient) && SnapPlayer->m_SpecTeam)
+		if(pSnapPlayer->GetTeam() == TEAM_SPECTATORS || pSnapPlayer->IsPaused())
+		{
+			if(pSnapPlayer->m_SpectatorID != -1 && !CanCollide(pSnapPlayer->m_SpectatorID) && !pSnapPlayer->m_ShowOthers)
+				return;
+			else if(pSnapPlayer->m_SpectatorID == -1 && !CanCollide(SnappingClient) && pSnapPlayer->m_SpecTeam)
+				return;
+		}
+		else if(pSnapChar && !pSnapChar->m_Super && !CanCollide(SnappingClient) && !pSnapPlayer->m_ShowOthers)
 			return;
 	}
 
 	if (m_Paused)
 		return;
 
-	SnapCharacter(SnappingClient, id);
+	SnapCharacter(SnappingClient, ID);
 
-	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, id, sizeof(CNetObj_DDNetCharacter)));
+	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, ID, sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)
 		return;
 
@@ -1452,13 +1450,13 @@ int CCharacter::NetworkClipped(int SnappingClient, vec2 CheckPos)
 		return 0;
 
 	float dx = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.x-CheckPos.x;
+	if(absolute(dx) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.x)
+		return 1;
+
 	float dy = GameServer()->m_apPlayers[SnappingClient]->m_ViewPos.y-CheckPos.y;
-
-	if(absolute(dx) > 1000.0f || absolute(dy) > 800.0f)
+	if(absolute(dy) > GameServer()->m_apPlayers[SnappingClient]->m_ShowDistance.y)
 		return 1;
 
-	if(distance(GameServer()->m_apPlayers[SnappingClient]->m_ViewPos, CheckPos) > 4000.0f)
-		return 1;
 	return 0;
 }
 
@@ -2105,7 +2103,7 @@ void CCharacter::HandleTiles(int Index)
 
 		m_StartTime -= (min * 60 + sec) * Server()->TickSpeed();
 
-		if (Team != TEAM_FLOCK && Team != TEAM_SUPER)
+		if ((g_Config.m_SvTeam == 3 || Team != TEAM_FLOCK) && Team != TEAM_SUPER)
 		{
 			for (int i = 0; i < MAX_CLIENTS; i++)
 			{
@@ -2131,7 +2129,7 @@ void CCharacter::HandleTiles(int Index)
 		if (m_StartTime > Server()->Tick())
 			m_StartTime = Server()->Tick();
 
-		if (Team != TEAM_FLOCK && Team != TEAM_SUPER)
+		if ((g_Config.m_SvTeam == 3 || Team != TEAM_FLOCK) && Team != TEAM_SUPER)
 		{
 			for (int i = 0; i < MAX_CLIENTS; i++)
 			{
@@ -2382,7 +2380,10 @@ void CCharacter::DDRaceTick()
 	HandleTuneLayer(); // need this before coretick
 
 	// look for save position for rescue feature
-	if(g_Config.m_SvRescue || (Team() > TEAM_FLOCK && Team() < TEAM_SUPER)) {
+	if(g_Config.m_SvRescue
+			|| ((g_Config.m_SvTeam == 3 || Team() > TEAM_FLOCK)
+					&& Team() >= TEAM_FLOCK
+					&& Team() < TEAM_SUPER)) {
 		int index = GameServer()->Collision()->GetPureMapIndex(m_Pos);
 		int tile = GameServer()->Collision()->GetTileIndex(index);
 		int ftile = GameServer()->Collision()->GetFTileIndex(index);
@@ -2602,8 +2603,9 @@ void CCharacter::DDRaceInit()
 
 void CCharacter::Rescue()
 {
-	if (m_SetSavePos && !m_Super) {
-		if (m_LastRescue + g_Config.m_SvRescueDelay * Server()->TickSpeed() > Server()->Tick())
+	if(m_SetSavePos && !m_Super)
+	{
+		if(m_LastRescue + g_Config.m_SvRescueDelay * Server()->TickSpeed() > Server()->Tick())
 		{
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "You have to wait %d seconds until you can rescue yourself", (int)((m_LastRescue + g_Config.m_SvRescueDelay * Server()->TickSpeed() - Server()->Tick()) / Server()->TickSpeed()));
@@ -2611,13 +2613,20 @@ void CCharacter::Rescue()
 			return;
 		}
 
-
 		float StartTime = m_StartTime;
 		m_RescueTee.load(this, Team());
 		// Don't load these from saved tee:
 		m_Core.m_Vel = vec2(0, 0);
 		m_Core.m_HookState = HOOK_IDLE;
 		m_StartTime = StartTime;
+		m_SavedInput.m_Direction = 0;
+		m_SavedInput.m_Jump = 0;
+		// simulate releasing the fire button
+		if((m_SavedInput.m_Fire&1) != 0)
+			m_SavedInput.m_Fire++;
+		m_SavedInput.m_Fire &= INPUT_STATE_MASK;
+		m_SavedInput.m_Hook = 0;
+		m_pPlayer->Pause(CPlayer::PAUSE_NONE, true);
 	}
 }
 

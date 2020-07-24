@@ -130,7 +130,7 @@ void CGameClient::OnConsoleInit()
 	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pFoes = Client()->Foes();
-#if defined(CONF_FAMILY_WINDOWS) || defined(CONF_PLATFORM_LINUX)
+#if defined(CONF_AUTOUPDATE)
 	m_pUpdater = Kernel()->RequestInterface<IUpdater>();
 #endif
 
@@ -1540,8 +1540,6 @@ void CGameClient::OnNewSnapshot()
 
 	if(m_ShowOthers[g_Config.m_ClDummy] == -1 || (m_ShowOthers[g_Config.m_ClDummy] != -1 && m_ShowOthers[g_Config.m_ClDummy] != g_Config.m_ClShowOthers))
 	{
-		// no need to send, default settings
-		//if(!(m_ShowOthers == -1 && g_Config.m_ClShowOthers))
 		{
 			CNetMsg_Cl_ShowOthers Msg;
 			Msg.m_Show = g_Config.m_ClShowOthers;
@@ -1551,6 +1549,31 @@ void CGameClient::OnNewSnapshot()
 		// update state
 		m_ShowOthers[g_Config.m_ClDummy] = g_Config.m_ClShowOthers;
 	}
+
+	static float LastZoom = .0;
+	static float LastScreenAspect = .0;
+	static bool LastDummyConnected = false;
+	float ZoomToSend = m_pCamera->m_ZoomSmoothingTarget == .0 ? m_pCamera->m_Zoom // Initial
+		: m_pCamera->m_ZoomSmoothingTarget > m_pCamera->m_Zoom ? m_pCamera->m_ZoomSmoothingTarget // Zooming out
+		: m_pCamera->m_ZoomSmoothingTarget < m_pCamera->m_Zoom ? LastZoom // Zooming in
+		: m_pCamera->m_Zoom; // Not zooming
+	if(ZoomToSend != LastZoom || Graphics()->ScreenAspect() != LastScreenAspect || (Client()->DummyConnected() && !LastDummyConnected))
+	{
+		CNetMsg_Cl_ShowDistance Msg;
+		float x, y;
+		RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), ZoomToSend, &x, &y);
+		Msg.m_X = x;
+		Msg.m_Y = y;
+		CMsgPacker Packer(Msg.MsgID(), false);
+		Msg.Pack(&Packer);
+		if(ZoomToSend != LastZoom)
+			Client()->SendMsgY(&Packer, MSGFLAG_VITAL, 0);
+		if(Client()->DummyConnected())
+			Client()->SendMsgY(&Packer, MSGFLAG_VITAL, 1);
+		LastZoom = ZoomToSend;
+		LastScreenAspect = Graphics()->ScreenAspect();
+	}
+	LastDummyConnected = Client()->DummyConnected();
 
 	m_pGhost->OnNewSnapshot();
 	m_pRaceDemo->OnNewSnapshot();
@@ -1859,6 +1882,7 @@ void CGameClient::CClientData::Reset()
 	m_EmoticonStart = -1;
 	m_Active = false;
 	m_ChatIgnore = false;
+	m_EmoticonIgnore = false;
 	m_Friend = false;
 	m_Foe = false;
 	m_AuthLevel = AUTHED_NO;

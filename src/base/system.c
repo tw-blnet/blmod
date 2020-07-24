@@ -930,9 +930,9 @@ int64 time_get_impl(void)
 #if defined(CONF_PLATFORM_MACOSX)
 		static int got_timebase = 0;
 		mach_timebase_info_data_t timebase;
-		uint64_t time;
-		uint64_t q;
-		uint64_t r;
+		uint64 time;
+		uint64 q;
+		uint64 r;
 		if(!got_timebase)
 		{
 			mach_timebase_info(&timebase);
@@ -2333,13 +2333,11 @@ int str_length(const char *str)
 int str_format(char *buffer, int buffer_size, const char *format, ...)
 {
 	int ret;
-
+#if defined(CONF_FAMILY_WINDOWS)
 	va_list ap;
 	va_start(ap, format);
-#if defined(__MINGW32__)
-	ret = __mingw_vsnprintf(buffer, buffer_size, format, ap);
-#elif defined(CONF_FAMILY_WINDOWS)
 	ret = _vsnprintf(buffer, buffer_size, format, ap);
+	va_end(ap);
 
 	buffer[buffer_size-1] = 0; /* assure null termination */
 
@@ -2348,11 +2346,13 @@ int str_format(char *buffer, int buffer_size, const char *format, ...)
 	if(ret < 0)
 		ret = buffer_size - 1;
 #else
+	va_list ap;
+	va_start(ap, format);
 	ret = vsnprintf(buffer, buffer_size, format, ap);
-#endif
 	va_end(ap);
 
 	/* null termination is assured by definition of vsnprintf */
+#endif
 
 	/* a return value of buffer_size or more indicates truncated output */
 	if(ret >= buffer_size)
@@ -3254,7 +3254,7 @@ int open_link(const char *link)
 	str_format(aBuf, sizeof(aBuf), "start %s", link);
 	return (uintptr_t)ShellExecuteA(NULL, "open", link, NULL, NULL, SW_SHOWDEFAULT) > 32;
 #elif defined(CONF_PLATFORM_LINUX)
-	str_format(aBuf, sizeof(aBuf), "xdg-open %s &", link);
+	str_format(aBuf, sizeof(aBuf), "xdg-open %s >/dev/null 2>&1 &", link);
 	return system(aBuf) == 0;
 #elif defined(CONF_FAMILY_UNIX)
 	str_format(aBuf, sizeof(aBuf), "open %s &", link);

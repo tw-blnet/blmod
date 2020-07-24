@@ -748,8 +748,8 @@ bool CSqlScore::SaveTeamScoreThread(CSqlServer* pSqlServer, const CSqlData<void>
 			if(pData->m_Time < Time)
 			{
 				str_format(aBuf, sizeof(aBuf),
-						"UPDATE %s_teamrace SET Time='%.2f', Timestamp='%s', DDNet7=false WHERE ID = '%s';",
-						pSqlServer->GetPrefix(), pData->m_Time, pData->m_aTimestamp, ID.c_str());
+						"UPDATE %s_teamrace SET Time='%.2f', Timestamp='%s', DDNet7=false, GameID='%s' WHERE ID = '%s';",
+						pSqlServer->GetPrefix(), pData->m_Time, pData->m_aTimestamp, pData->m_GameUuid, ID.c_str());
 				dbg_msg("sql", "%s", aBuf);
 				pSqlServer->executeSql(aBuf);
 			}
@@ -1562,7 +1562,7 @@ bool CSqlScore::SaveTeamThread(CSqlServer* pSqlServer, const CSqlData<CScoreSave
 			char aBuf[65536];
 			str_format(aBuf, sizeof(aBuf),
 					"INSERT IGNORE INTO %%s_saves(Savegame, Map, Code, Timestamp, Server, SaveID, DDNet7) "
-					"VALUES ('%s', '%s', '%s', CURRENT_TIMESTAMP(), '%s', '%s', false)",
+					"VALUES ('%s', '%s', '%s', CURRENT_TIMESTAMP(), '%s', '%s', false);",
 					SaveState.ClrStr(), Map.ClrStr(),
 					Code.ClrStr(), pData->m_Server, aSaveID
 			);
@@ -1616,7 +1616,7 @@ bool CSqlScore::SaveTeamThread(CSqlServer* pSqlServer, const CSqlData<CScoreSave
 				str_copy(Code, pData->m_Code, sizeof(Code));
 			}
 		}
-		else
+		if(!UseCode)
 		{
 			// use random generated passphrase if save code exists or no save code given
 			pPrepStmt->setString(1, pData->m_aGeneratedCode);
@@ -1688,7 +1688,7 @@ void CSqlScore::LoadTeam(const char* Code, int ClientID)
 	int Team = pController->m_Teams.m_Core.Team(ClientID);
 	if(pController->m_Teams.GetSaving(Team))
 		return;
-	if(Team <= 0 || Team >= MAX_CLIENTS)
+	if(Team < TEAM_FLOCK || Team >= MAX_CLIENTS || (g_Config.m_SvTeam != 3 && Team == TEAM_FLOCK))
 	{
 		GameServer()->SendChatTarget(ClientID, "You have to be in a team (from 1-63)");
 		return;

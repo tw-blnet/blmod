@@ -281,11 +281,13 @@ void CPlayers::RenderPlayer(
 
 	// draw gun
 	{
+		bool AlwaysRenderHookColl = GameClient()->m_GameInfo.m_AllowHookColl && (Local ? g_Config.m_ClShowHookCollOwn : g_Config.m_ClShowHookCollOther) == 2;
+		bool RenderHookCollPlayer = ClientID >= 0 && Player.m_PlayerFlags & PLAYERFLAG_AIM && (Local ? g_Config.m_ClShowHookCollOwn : g_Config.m_ClShowHookCollOther) > 0;
+		bool RenderHookCollVideo = true;
 #if defined(CONF_VIDEORECORDER)
-		if(ClientID >= 0 && ((GameClient()->m_GameInfo.m_AllowHookColl && g_Config.m_ClShowHookCollAlways) || (Player.m_PlayerFlags&PLAYERFLAG_AIM && ((!Local && ((!IVideo::Current()&&g_Config.m_ClShowHookCollOther)||(IVideo::Current()&&g_Config.m_ClVideoShowHookCollOther))) || (Local && g_Config.m_ClShowHookCollOwn)))))
-#else
-		if(ClientID >= 0 && ((GameClient()->m_GameInfo.m_AllowHookColl && g_Config.m_ClShowHookCollAlways) || (Player.m_PlayerFlags&PLAYERFLAG_AIM && ((!Local && g_Config.m_ClShowHookCollOther) || (Local && g_Config.m_ClShowHookCollOwn)))))
+		RenderHookCollVideo = !IVideo::Current() || g_Config.m_ClVideoShowHookCollOther || Local;
 #endif
+		if((AlwaysRenderHookColl || RenderHookCollPlayer) && RenderHookCollVideo)
 		{
 			vec2 ExDirection = Direction;
 
@@ -347,7 +349,7 @@ void CPlayers::RenderPlayer(
 				ExDirection.y = round_to_int(ExDirection.y*256.0f) / 256.0f;
 			} while (!DoBreak);
 
-			if(g_Config.m_ClShowHookCollAlways && (Player.m_PlayerFlags&PLAYERFLAG_AIM))
+			if(AlwaysRenderHookColl && RenderHookCollPlayer)
 			{
 				// invert the hook coll colors when using cl_show_hook_coll_always and +showhookcoll is pressed
 				HookCollColor = color_invert(HookCollColor);
@@ -592,7 +594,7 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsSetRotation(0);
 	}
 
-	if(g_Config.m_ClShowEmotes && m_pClient->m_aClients[ClientID].m_EmoticonStart != -1 && m_pClient->m_aClients[ClientID].m_EmoticonStart <= Client()->GameTick(g_Config.m_ClDummy) && m_pClient->m_aClients[ClientID].m_EmoticonStart + 2 * Client()->GameTickSpeed() > Client()->GameTick(g_Config.m_ClDummy))
+	if(g_Config.m_ClShowEmotes && !m_pClient->m_aClients[ClientID].m_EmoticonIgnore && m_pClient->m_aClients[ClientID].m_EmoticonStart != -1 && m_pClient->m_aClients[ClientID].m_EmoticonStart <= Client()->GameTick(g_Config.m_ClDummy) && m_pClient->m_aClients[ClientID].m_EmoticonStart + 2 * Client()->GameTickSpeed() > Client()->GameTick(g_Config.m_ClDummy))
 	{
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
 
@@ -673,8 +675,10 @@ void CPlayers::OnRender()
 				{
 					continue;
 				}
+				bool OtherTeam = m_pClient->IsOtherTeam(i);
+				float Alpha = OtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
 				vec2 Pos = m_pClient->m_aClients[i].m_SpecChar;
-				RenderTools()->RenderTee(CAnimState::GetIdle(), &m_RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Pos, 1.0f);
+				RenderTools()->RenderTee(CAnimState::GetIdle(), &m_RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Pos, Alpha);
 			}
 			else
 			{

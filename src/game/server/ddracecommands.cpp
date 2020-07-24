@@ -658,6 +658,13 @@ void CGameContext::ConSetDDRTeam(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	CGameControllerDDRace *pController = (CGameControllerDDRace *)pSelf->m_pController;
 
+	if(g_Config.m_SvTeam == 0 || g_Config.m_SvTeam == 3)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "join",
+				"Teams are disabled");
+		return;
+	}
+
 	int Target = pResult->GetVictim();
 	int Team = pResult->GetInteger(1);
 
@@ -736,8 +743,10 @@ void CGameContext::ConDrySave(IConsole::IResult *pResult, void *pUserData)
 	if(CSaveTeam::HandleSaveError(Result, pResult->m_ClientID, pSelf))
 		return;
 
+	char aTimestamp[32];
+	str_timestamp(aTimestamp, sizeof(aTimestamp));
 	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "%s-%lld-%s.save", pSelf->Server()->GetMapName(), time_get(), pSelf->Server()->GetAuthName(pResult->m_ClientID));
+	str_format(aBuf, sizeof(aBuf), "%s_%s_%s.save", pSelf->Server()->GetMapName(), aTimestamp, pSelf->Server()->GetAuthName(pResult->m_ClientID));
 	IOHANDLE File = pSelf->Storage()->OpenFile(aBuf, IOFLAG_WRITE, IStorage::TYPE_ALL);
 	if(!File)
 		return;
