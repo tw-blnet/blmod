@@ -1934,26 +1934,29 @@ bool CSqlScore::RegisterThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuth
 	try
 	{
 		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf),
-				"SELECT COUNT(id) AS count "
-				"FROM %s_users "
-				"WHERE created_ip=%u AND TIME_TO_SEC(TIMEDIFF(NOW(), created)) < %d;",
-				pSqlServer->GetPrefix(), pData->m_IP, 60*60*24);
-		pSqlServer->executeSqlQuery(aBuf);
+		if (g_Config.m_SvAccountRegisterLimit)
+		{
+			str_format(aBuf, sizeof(aBuf),
+					"SELECT COUNT(id) AS count "
+					"FROM %s_users "
+					"WHERE created_ip=%u AND TIME_TO_SEC(TIMEDIFF(NOW(), created)) < %d;",
+					pSqlServer->GetPrefix(), pData->m_IP, 60*g_Config.m_SvAccountRegisterInterval);
+			pSqlServer->executeSqlQuery(aBuf);
 
-		if (pSqlServer->GetResults()->next())
-		{
-			int count = pSqlServer->GetResults()->getInt("count");
-			if (count >= 4)
+			if (pSqlServer->GetResults()->next())
 			{
-				pData->m_pResult->m_Done = true;
-				return true;
+				int count = pSqlServer->GetResults()->getInt("count");
+				if (count >= g_Config.m_SvAccountRegisterLimit)
+				{
+					pData->m_pResult->m_Done = true;
+					return true;
+				}
 			}
-		}
-		else
-		{
-			dbg_msg("sql", "ERROR: Can't select count of registered players with same ip");
-			return false;
+			else
+			{
+				dbg_msg("sql", "ERROR: Can't select count of registered players with same ip");
+				return false;
+			}
 		}
 
 		str_format(aBuf, sizeof(aBuf),

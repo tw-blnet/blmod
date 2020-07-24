@@ -317,6 +317,8 @@ MACRO_CONFIG_INT(SvAllowArenas, sv_allow_1vs1, 1, 0, 1, CFGFLAG_SERVER, "Allow 1
 
 MACRO_CONFIG_INT(SvAccountLogin, sv_account_login, 1, 0, 1, CFGFLAG_SERVER, "Allow login")
 MACRO_CONFIG_INT(SvAccountRegister, sv_account_register, 1, 0, 1, CFGFLAG_SERVER, "Allow register new account")
+MACRO_CONFIG_INT(SvAccountRegisterLimit, sv_account_register_limit, 4, 0, 0, CFGFLAG_SERVER, "How many accounts can be created from one IP per interval (0 - no limit)")
+MACRO_CONFIG_INT(SvAccountRegisterInterval, sv_account_register_interval, 1440, 0, 0, CFGFLAG_SERVER, "Interval in minutes for account registration limit")
 
 MACRO_CONFIG_INT(SvBlockExperience, sv_block_experience, 1, 0, 0, CFGFLAG_SERVER, "Count of awarded experience points for registered block")
 MACRO_CONFIG_INT(SvBlockFreezedInterval, sv_block_freezed, 4, 0, 0, CFGFLAG_SERVER, "How long player have to be frozen to be blocked")
