@@ -195,8 +195,8 @@ bool CSqlServer::CreateTables()
 
 		str_format(aBuf, sizeof(aBuf), "CREATE TABLE IF NOT EXISTS %s_users ("
 			"id INT AUTO_INCREMENT PRIMARY KEY,"
-			"username VARCHAR(31) NOT NULL UNIQUE,"
-			"password VARCHAR(63) NOT NULL,"
+			"username VARCHAR(32) NOT NULL UNIQUE,"
+			"password VARCHAR(64) NOT NULL,"
 			"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
 			"created_ip INT UNSIGNED,"
 			"last_login TIMESTAMP,"

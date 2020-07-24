@@ -1958,7 +1958,7 @@ bool CSqlScore::RegisterThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuth
 
 		str_format(aBuf, sizeof(aBuf),
 				"INSERT INTO %s_users(username, password, created_ip) "
-				"VALUES ('%s', '%s', '%u');",
+				"VALUES ('%s', SHA2('%s', 256), '%u');",
 				pSqlServer->GetPrefix(), pData->m_Username.ClrStr(), pData->m_Password.ClrStr(), pData->m_IP);
 		pSqlServer->executeSql(aBuf);
 
@@ -2029,7 +2029,7 @@ bool CSqlScore::LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthRes
 		str_format(aBuf, sizeof(aBuf),
 				"SELECT id, rcon_level, level, experience "
 				"FROM %s_users "
-				"WHERE username='%s' AND password='%s' "
+				"WHERE username='%s' AND password=SHA2('%s', 256) "
 				"LIMIT 1;",
 				pSqlServer->GetPrefix(), pData->m_Username.ClrStr(), pData->m_Password.ClrStr());
 		pSqlServer->executeSqlQuery(aBuf);
@@ -2121,7 +2121,7 @@ bool CSqlScore::ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CSco
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf),
 				"UPDATE %s_users "
-				"SET password='%s' "
+				"SET password=SHA2('%s', 256) "
 				"WHERE username='%s';",
 				pSqlServer->GetPrefix(), pData->m_Password.ClrStr(), pData->m_Username.ClrStr());
 		pSqlServer->executeSql(aBuf);
