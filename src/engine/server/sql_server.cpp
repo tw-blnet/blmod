@@ -199,7 +199,7 @@ bool CSqlServer::CreateTables()
 			"password VARCHAR(64) NOT NULL,"
 			"created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
 			"created_ip INT UNSIGNED,"
-			"last_login TIMESTAMP,"
+			"last_login TIMESTAMP NULL DEFAULT NULL,"
 			"last_login_ip INT UNSIGNED,"
 			"rcon_level TINYINT NOT NULL DEFAULT 0,"
 			"level INT NOT NULL DEFAULT 0,"
@@ -209,7 +209,7 @@ bool CSqlServer::CreateTables()
 			"stats_races INT NOT NULL DEFAULT 0,"
 			"discord_id BIGINT UNSIGNED,"
 			"discord_link_code INT UNSIGNED UNIQUE,"
-			"discord_link_issued TIMESTAMP"
+			"discord_link_issued TIMESTAMP NULL DEFAULT NULL"
 		") CHARACTER SET utf8mb4;", m_aPrefix);
 		executeSql(aBuf);
 
