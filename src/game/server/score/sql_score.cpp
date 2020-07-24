@@ -2142,6 +2142,117 @@ bool CSqlScore::ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CSco
 	return false;
 }
 
+void CSqlScore::LinkDiscord(int ClientID)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	if (!pCurPlayer || !pCurPlayer->m_Account.m_Authenticated)
+		return;
+	pCurPlayer->m_ScoreAuthResult = std::make_shared<CScoreAuthResult>();
+
+	CSqlUserData *Tmp = new CSqlUserData(pCurPlayer->m_ScoreAuthResult);
+	Tmp->m_UserID = pCurPlayer->m_Account.m_UserID;
+
+	thread_init_and_detach(CSqlExecData<CScoreAuthResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreAuthResult>(LinkDiscordThread, Tmp),
+			"link discord");
+}
+
+bool CSqlScore::LinkDiscordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure)
+{
+	const CSqlUserData *pData = dynamic_cast<const CSqlUserData *>(pGameData);
+	pData->m_pResult->m_Action = CScoreAuthResult::LINK_DISCORD;
+	pData->m_pResult->m_Data.m_LinkDiscord.m_Linked = false;
+	pData->m_pResult->m_Data.m_LinkDiscord.m_Code = -1;
+	pData->m_pResult->m_Data.m_LinkDiscord.m_Lifetime = -1;
+	pData->m_pResult->m_Data.m_LinkDiscord.m_DiscordID = 0;
+
+	if (HandleFailure)
+		return true;
+
+	try
+	{
+		// checks if account is linked to Discord
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT discord_id "
+				"FROM %s_users "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), pData->m_UserID);
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if (!pSqlServer->GetResults()->next())
+		{
+			dbg_msg("sql", "ERROR: Could not get Discord id of requested user");
+			return false;
+		}
+
+		if (!pSqlServer->GetResults()->isNull("discord_id"))
+		{
+			// already linked
+			pData->m_pResult->m_Data.m_LinkDiscord.m_Linked = true;
+			pData->m_pResult->m_Data.m_LinkDiscord.m_DiscordID = pSqlServer->GetResults()->getUInt64("discord_id");
+			pData->m_pResult->m_Done = true;
+			dbg_msg("sql", "Discord link code generation not needed");
+			return true;
+		}
+
+		// try to generate unique code
+		int LinkCode = -1;
+		int Attempts = 10;
+		while (Attempts > 0 && LinkCode < 0)
+		{
+			int TriedCode = ((float) secure_rand() / RAND_MAX) * 1e6;
+			str_format(aBuf, sizeof(aBuf),
+				"SELECT COUNT(id) as count "
+				"FROM %s_users "
+				"WHERE discord_link_code=%d;",
+				pSqlServer->GetPrefix(), TriedCode);
+			pSqlServer->executeSqlQuery(aBuf);
+
+			if (pSqlServer->GetResults()->next())
+			{
+				int Count = pSqlServer->GetResults()->getInt("count");
+				if (Count == 0)
+				{
+					LinkCode = TriedCode;
+					break;
+				}
+			}
+
+			Attempts --;
+		}
+
+		if (LinkCode < 0)
+		{
+			dbg_msg("sql", "ERROR: Could not generate Discord link code");
+			return false;
+		}
+
+		// insert generated code into DB
+		str_format(aBuf, sizeof(aBuf),
+				"UPDATE %s_users "
+				"SET discord_link_code=%d, discord_link_issued=NOW() "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), LinkCode, pData->m_UserID);
+		pSqlServer->executeSql(aBuf);
+
+		pData->m_pResult->m_Data.m_LinkDiscord.m_Code = LinkCode;
+		pData->m_pResult->m_Data.m_LinkDiscord.m_Lifetime = g_Config.m_SvDiscordCodeLifetime;
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "Discord link code generation done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not link Discord account");
+	}
+	return false;
+}
+
 void CSqlScore::GiveExperience(int ClientID, int Count)
 {
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];

@@ -320,6 +320,9 @@ MACRO_CONFIG_INT(SvAccountRegister, sv_account_register, 1, 0, 1, CFGFLAG_SERVER
 MACRO_CONFIG_INT(SvAccountRegisterLimit, sv_account_register_limit, 4, 0, 0, CFGFLAG_SERVER, "How many accounts can be created from one IP per interval (0 - no limit)")
 MACRO_CONFIG_INT(SvAccountRegisterInterval, sv_account_register_interval, 1440, 0, 0, CFGFLAG_SERVER, "Interval in minutes for account registration limit")
 
+MACRO_CONFIG_INT(SvDiscordCodeLifetime, sv_discord_code_lifetime, 10, 0, 0, CFGFLAG_SERVER, "Discord link code lifetime in minutes for account registration limit")
+MACRO_CONFIG_STR(SvDiscordLinkMessage, sv_discord_link_message, 512, "To link your Discord account, join Discord server and write this private message to bot: \"link %06d\". This code will be valid for next %d minutes", CFGFLAG_SERVER, "Message format for linking account to Discord")
+
 MACRO_CONFIG_INT(SvBlockExperience, sv_block_experience, 1, 0, 0, CFGFLAG_SERVER, "Count of awarded experience points for registered block")
 MACRO_CONFIG_INT(SvBlockFreezedInterval, sv_block_freezed, 4, 0, 0, CFGFLAG_SERVER, "How long player have to be frozen to be blocked")
 MACRO_CONFIG_INT(SvBlockResetUnfreezedInterval, sv_block_reset_unfreezed, 3, 0, 0, CFGFLAG_SERVER, "How long player have to be not frozen to lost impact of enemy")

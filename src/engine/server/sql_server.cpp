@@ -206,7 +206,10 @@ bool CSqlServer::CreateTables()
 			"experience INT NOT NULL DEFAULT 0,"
 			"stats_block_kills INT NOT NULL DEFAULT 0,"
 			"stats_block_deaths INT NOT NULL DEFAULT 0,"
-			"stats_races INT NOT NULL DEFAULT 0"
+			"stats_races INT NOT NULL DEFAULT 0,"
+			"discord_id BIGINT UNSIGNED,"
+			"discord_link_code INT UNSIGNED UNIQUE,"
+			"discord_link_issued TIMESTAMP"
 		") CHARACTER SET utf8mb4;", m_aPrefix);
 		executeSql(aBuf);
 

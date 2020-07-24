@@ -116,6 +116,12 @@ struct CSqlLoginData : CSqlData<CScoreAuthResult>
 	unsigned int m_IP;
 };
 
+struct CSqlUserData : CSqlData<CScoreAuthResult>
+{
+	using CSqlData<CScoreAuthResult>::CSqlData;
+	unsigned int m_UserID;
+};
+
 struct CSqlExperienceData : CSqlData<CScoreExperienceResult>
 {
 	using CSqlData<CScoreExperienceResult>::CSqlData;
@@ -187,6 +193,7 @@ class CSqlScore: public IScore
 	static bool RegisterThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
 	static bool LoginThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
 	static bool ChangePasswordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
+	static bool LinkDiscordThread(CSqlServer* pSqlServer, const CSqlData<CScoreAuthResult> *pGameData, bool HandleFailure = false);
 
 	static bool GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CScoreExperienceResult> *pGameData, bool HandleFailure = false);
 
@@ -256,6 +263,7 @@ public:
 	virtual void Login(int ClientID, const char* Username, const char* Password);
 	virtual void Logout(int ClientID);
 	virtual void ChangePassword(int ClientID, const char* Password);
+	virtual void LinkDiscord(int ClientID);
 
 	virtual void GiveExperience(int ClientID, int Count);
 

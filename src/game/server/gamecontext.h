@@ -396,6 +396,7 @@ private:
 	static void ConChangePassword(IConsole::IResult *pResult, void *pUserData);
 	static void ConLogout(IConsole::IResult *pResult, void *pUserData);
 	static void ConStats(IConsole::IResult *pResult, void *pUserData);
+	static void ConDiscord(IConsole::IResult *pResult, void *pUserData);
 
 	enum
 	{

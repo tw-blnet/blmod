@@ -115,6 +115,7 @@ struct CScoreAuthResult
 		LOGIN,
 		CHANGE_PASSWORD,
 		LOGOUT,
+		LINK_DISCORD,
 	} m_Action;
 
 	union {
@@ -140,6 +141,14 @@ struct CScoreAuthResult
 		{
 			bool m_Success;
 		} m_Logout;
+
+		struct
+		{
+			bool m_Linked;
+			int m_Code;
+			int m_Lifetime;
+			unsigned long m_DiscordID;
+		} m_LinkDiscord;
 	} m_Data;
 };
 
@@ -240,6 +249,7 @@ public:
 	virtual void Login(int ClientID, const char* Username, const char* Password) = 0;
 	virtual void Logout(int ClientID) = 0;
 	virtual void ChangePassword(int ClientID, const char* Password) = 0;
+	virtual void LinkDiscord(int ClientID) = 0;
 
 	static int ExperienceRequired(int Level);
 	virtual void GiveExperience(int ClientID, int Count) = 0;
