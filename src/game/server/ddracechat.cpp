@@ -1664,3 +1664,18 @@ void CGameContext::ConLogout(IConsole::IResult *pResult, void *pUserData)
 
 	pSelf->Score()->Logout(pResult->m_ClientID);
 }
+
+void CGameContext::ConStats(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID))
+		return;
+
+	if (!pSelf->m_apPlayers[pResult->m_ClientID]->m_Account.m_Authenticated)
+	{
+		pSelf->SendChatTarget(pResult->m_ClientID, "You are not logged in");
+		return;
+	}
+
+	pSelf->Score()->LoadStats(pResult->m_ClientID);
+}

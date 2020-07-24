@@ -208,6 +208,8 @@ public:
 	std::shared_ptr<CScoreAuthResult> m_ScoreAuthResult;
 	void ProcessExperienceResult(CScoreExperienceResult &Result);
 	std::shared_ptr<CScoreExperienceResult> m_ScoreExperienceResult;
+	void ProcessStatsResult(CScoreStatsResult &Result);
+	std::shared_ptr<CScoreStatsResult> m_ScoreStatsResult;
 	bool m_NotEligibleForFinish;
 	int64 m_EligibleForFinishCheck;
 	bool m_VotedForPractice;

@@ -128,6 +128,7 @@ void CPlayer::Reset()
 	m_ScoreFinishResult = nullptr;
 	m_ScoreAuthResult = nullptr;
 	m_ScoreExperienceResult = nullptr;
+	m_ScoreStatsResult = nullptr;
 
 	int64 Now = Server()->Tick();
 	int64 TickSpeed = Server()->TickSpeed();
@@ -192,6 +193,11 @@ void CPlayer::Tick()
 	{
 		ProcessExperienceResult(*m_ScoreExperienceResult);
 		m_ScoreExperienceResult = nullptr;
+	}
+	if(m_ScoreStatsResult != nullptr && m_ScoreStatsResult.use_count() == 1)
+	{
+		ProcessStatsResult(*m_ScoreStatsResult);
+		m_ScoreStatsResult = nullptr;
 	}
 
 	if(!Server()->ClientIngame(m_ClientID))
@@ -1156,4 +1162,23 @@ void CPlayer::ProcessExperienceResult(CScoreExperienceResult &Result)
 
 		ShowLevelProgress(Result.m_ExperienceIncrement);
 	}
+}
+
+void CPlayer::ProcessStatsResult(CScoreStatsResult &Result)
+{
+	if (!Result.m_Done || !m_Account.m_Authenticated)
+		return;
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "Statistics for %s (id #%d):", m_Account.m_Username, m_Account.m_UserID);
+	GameServer()->SendChatTarget(m_ClientID, aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Level: %d | Experience: %d/%d", Result.m_Level, Result.m_Experience, IScore::ExperienceRequired(Result.m_Level+1));
+	GameServer()->SendChatTarget(m_ClientID, aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Block Kills/Deaths/Ratio: %d/%d/%.1f", Result.m_BlockKills, Result.m_BlockDeaths, (float) Result.m_BlockKills / Result.m_BlockDeaths);
+	GameServer()->SendChatTarget(m_ClientID, aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "Races: %d", Result.m_Races);
+	GameServer()->SendChatTarget(m_ClientID, aBuf);
 }

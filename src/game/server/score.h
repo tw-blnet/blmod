@@ -160,6 +160,17 @@ enum
 	ACTION_RACE,
 };
 
+struct CScoreStatsResult
+{
+	std::atomic_bool m_Done = ATOMIC_VAR_INIT(false);
+
+	int m_Level;
+	int m_Experience;
+	int m_BlockKills;
+	int m_BlockDeaths;
+	int m_Races;
+};
+
 class CPlayerData
 {
 public:
@@ -233,6 +244,7 @@ public:
 	static int ExperienceRequired(int Level);
 	virtual void GiveExperience(int ClientID, int Count) = 0;
 
+	virtual void LoadStats(int ClientID) = 0;
 	virtual void RegisterStats(int ClientID, int Action) = 0;
 
 	// called when the server is shut down but not on mapchange/reload

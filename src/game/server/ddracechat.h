@@ -66,5 +66,6 @@ CHAT_COMMAND("register", "s[login] r[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, Co
 CHAT_COMMAND("login", "s[login] r[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConLogin, this, "Login to account")
 CHAT_COMMAND("change_password", "s[password]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConChangePassword, this, "Change your account password")
 CHAT_COMMAND("logout", "", CFGFLAG_CHAT|CFGFLAG_SERVER, ConLogout, this, "Log out of your account")
+CHAT_COMMAND("stats", "", CFGFLAG_CHAT|CFGFLAG_SERVER, ConStats, this, "Show account statistics")
 
 #undef CHAT_COMMAND

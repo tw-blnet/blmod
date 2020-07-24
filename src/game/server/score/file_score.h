@@ -90,6 +90,7 @@ public:
 
 	virtual void GiveExperience(int ClientID, int Count) {}
 
+	virtual void LoadStats(int ClientID) {}
 	virtual void RegisterStats(int ClientID, int Action) {}
 
 	virtual void OnShutdown();

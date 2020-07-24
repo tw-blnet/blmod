@@ -2218,6 +2218,68 @@ bool CSqlScore::GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CSco
 	return false;
 }
 
+void CSqlScore::LoadStats(int ClientID)
+{
+	if(RateLimitPlayer(ClientID))
+		return;
+
+	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
+	if (!pCurPlayer || !pCurPlayer->m_Account.m_Authenticated)
+		return;
+
+	pCurPlayer->m_ScoreStatsResult = std::make_shared<CScoreStatsResult>();
+
+	CSqlStatsData *Tmp = new CSqlStatsData(pCurPlayer->m_ScoreStatsResult);
+	Tmp->m_UserID = pCurPlayer->m_Account.m_UserID;
+
+	thread_init_and_detach(CSqlExecData<CScoreStatsResult>::ExecSqlFunc,
+			new CSqlExecData<CScoreStatsResult>(LoadStatsThread, Tmp),
+			"load stats");
+}
+
+bool CSqlScore::LoadStatsThread(CSqlServer* pSqlServer, const CSqlData<CScoreStatsResult> *pGameData, bool HandleFailure)
+{
+	const CSqlStatsData *pData = dynamic_cast<const CSqlStatsData *>(pGameData);
+	pData->m_pResult->m_Level = -1;
+	pData->m_pResult->m_Experience = -1;
+	pData->m_pResult->m_BlockKills = -1;
+	pData->m_pResult->m_BlockDeaths = -1;
+	pData->m_pResult->m_Races = -1;
+
+	if (HandleFailure)
+		return true;
+
+	try
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf),
+				"SELECT level, experience, stats_block_kills, stats_block_deaths, stats_races "
+				"FROM %s_users "
+				"WHERE id=%d;",
+				pSqlServer->GetPrefix(), pData->m_UserID);
+		pSqlServer->executeSqlQuery(aBuf);
+
+		if(pSqlServer->GetResults()->next())
+		{
+			pData->m_pResult->m_Level = pSqlServer->GetResults()->getInt("level");
+			pData->m_pResult->m_Experience = pSqlServer->GetResults()->getInt("experience");
+			pData->m_pResult->m_BlockKills = pSqlServer->GetResults()->getInt("stats_block_kills");
+			pData->m_pResult->m_BlockDeaths = pSqlServer->GetResults()->getInt("stats_block_deaths");
+			pData->m_pResult->m_Races = pSqlServer->GetResults()->getInt("stats_races");
+		}
+
+		pData->m_pResult->m_Done = true;
+		dbg_msg("sql", "Player stats loading done");
+		return true;
+	}
+	catch (sql::SQLException &e)
+	{
+		dbg_msg("sql", "MySQL Error: %s", e.what());
+		dbg_msg("sql", "ERROR: Could not load player stats");
+	}
+	return false;
+}
+
 void CSqlScore::RegisterStats(int ClientID, int Action)
 {
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
@@ -2238,9 +2300,7 @@ bool CSqlScore::RegisterStatsThread(CSqlServer* pSqlServer, const CSqlData<void>
 	const CSqlRegisterStatsData *pData = dynamic_cast<const CSqlRegisterStatsData *>(pGameData);
 
 	if (HandleFailure)
-	{
 		return true;
-	}
 
 	try
 	{
