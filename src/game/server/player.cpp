@@ -1145,7 +1145,7 @@ void CPlayer::ProcessExperienceResult(CScoreExperienceResult &Result)
 
 		if (Result.m_LevelUp)
 		{
-			GameServer()->CreateSound(m_pCharacter->m_Pos, SOUND_CTF_CAPTURE, CmaskOne(m_ClientID));
+			GameServer()->CreateSoundGlobal(SOUND_CTF_CAPTURE, m_ClientID);
 			if (m_pCharacter)
 				m_pCharacter->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 		}
