@@ -525,12 +525,15 @@ void CArenasManager::Respawn(int Fight)
 		pChr->Core()->m_Vel = vec2(0, 0);
 		pChr->Core()->m_LastVel = vec2(0, 0);
 
-		pChr->m_DeepFreeze = 0;
 		pChr->SetSolo(false);
+
+		pChr->m_DeepFreeze = 0;
 		pChr->UnFreeze();
 		pChr->Freeze(1);
 
-		pChr->SetWeaponGot(WEAPON_GUN, false);
+		pChr->m_EndlessHook = false;
+
+		pChr->SetWeaponGot(WEAPON_GUN, true);
 		pChr->SetWeaponGot(WEAPON_SHOTGUN, pFight->m_Shotgun);
 		pChr->SetWeaponGot(WEAPON_GRENADE, pFight->m_Grenade);
 		pChr->SetWeaponGot(WEAPON_LASER, pFight->m_Laser);
