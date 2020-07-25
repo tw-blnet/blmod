@@ -609,6 +609,7 @@ void CGameTeams::OnFinish(CPlayer* Player, float Time, const char *pTimestamp)
 			GameServer()->Score()->SaveScore(ClientID, Time, pTimestamp,
 					GetCpCurrent(Player), Player->m_NotEligibleForFinish);
 
+	m_pGameContext->Score()->GiveExperience(ClientID, g_Config.m_SvRaceExperience);
 	m_pGameContext->Score()->RegisterStats(ClientID, ACTION_RACE);
 
 	bool NeedToSendNewRecord = false;
