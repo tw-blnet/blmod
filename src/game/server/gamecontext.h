@@ -383,6 +383,9 @@ private:
 	static void ConFreezeHammer(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnFreezeHammer(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConBrush(IConsole::IResult *pResult, void *pUserData);
+	static void ConDraw(IConsole::IResult *pResult, void *pUserData);
+	static void ConErase(IConsole::IResult *pResult, void *pUserData);
 	static void ConRainbow(IConsole::IResult *pResult, void *pUserData);
 	static void ConSkinChanger(IConsole::IResult *pResult, void *pUserData);
 	static void ConTail(IConsole::IResult *pResult, void *pUserData);

@@ -10,7 +10,7 @@ class CDoor: public CEntity
 {
 	vec2 m_To;
 	int m_EvalTick;
-	void ResetCollision();
+	void ResetCollision(bool Remove = false);
 	int m_Length;
 	vec2 m_Direction;
 
@@ -20,6 +20,7 @@ public:
 	void Close(int Team);
 	CDoor(CGameWorld *pGameWorld, vec2 Pos, float Rotation, int Length,
 			int Number);
+	~CDoor();
 
 	virtual void Reset();
 	virtual void Tick();

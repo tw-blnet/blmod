@@ -51,6 +51,7 @@ public:
 	void SetCollisionAt(float x, float y, int id);
 	void SetDTile(float x, float y, bool State);
 	void SetDCollisionAt(float x, float y, int Type, int Flags, int Number);
+	void UnsetDCollisionAt(float x, float y);
 	int GetDTileIndex(int Index);
 	int GetDTileFlags(int Index);
 	int GetDTileNumber(int Index);

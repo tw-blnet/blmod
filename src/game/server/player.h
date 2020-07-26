@@ -174,13 +174,35 @@ public:
 
 	bool m_Moderating;
 
-	struct {
+	struct
+	{
 		bool m_Authenticated;
 		int m_UserID;
 		char m_Username[32];
 		int m_Level;
 		int m_Experience;
 	} m_Account;
+
+	struct
+	{
+		int m_Entity;
+		bool m_Rounding;
+
+		union
+		{
+			struct
+			{
+				int m_Type;
+				int m_SubType;
+			} m_Pickup;
+
+			struct
+			{
+				float m_Length;
+				float m_Angle;
+			} m_Laser;
+		} m_Data;
+	} m_Brush;
 
 	bool AfkTimer(int new_target_x, int new_target_y); //returns true if kicked
 	void AfkVoteTimer(CNetObj_PlayerInput *NewTarget);

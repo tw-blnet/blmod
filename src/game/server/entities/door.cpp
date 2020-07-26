@@ -21,12 +21,17 @@ CDoor::CDoor(CGameWorld *pGameWorld, vec2 Pos, float Rotation, int Length,
 	GameWorld()->InsertEntity(this);
 }
 
+CDoor::~CDoor()
+{
+	ResetCollision(true);
+}
+
 void CDoor::Open(int Tick, bool ActivatedTeam[])
 {
 	m_EvalTick = Server()->Tick();
 }
 
-void CDoor::ResetCollision()
+void CDoor::ResetCollision(bool Remove)
 {
 	for (int i = 0; i < m_Length - 1; i++)
 	{
@@ -37,10 +42,15 @@ void CDoor::ResetCollision()
 				|| GameServer()->Collision()->GetFTile(m_Pos.x, m_Pos.y))
 			break;
 		else
-			GameServer()->Collision()->SetDCollisionAt(
-					m_Pos.x + (m_Direction.x * i),
-					m_Pos.y + (m_Direction.y * i), TILE_STOPA, 0/*Flags*/,
-					m_Number);
+			if (!Remove)
+				GameServer()->Collision()->SetDCollisionAt(
+						m_Pos.x + (m_Direction.x * i),
+						m_Pos.y + (m_Direction.y * i), TILE_STOPA, 0/*Flags*/,
+						m_Number);
+			else
+				GameServer()->Collision()->UnsetDCollisionAt(
+						m_Pos.x + (m_Direction.x * i),
+						m_Pos.y + (m_Direction.y * i));
 	}
 }
 

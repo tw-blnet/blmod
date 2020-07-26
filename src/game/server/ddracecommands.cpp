@@ -4,7 +4,11 @@
 #include <game/server/teams.h>
 #include <game/server/gamemodes/DDRace.h>
 #include <game/server/save.h>
+#include <game/server/entities/pickup.h>
 #include <game/version.h>
+#include <map>
+#include <stdexcept>
+#include <string>
 
 bool CheckClientID(int ClientID);
 
@@ -760,6 +764,213 @@ void CGameContext::ConDumpAntibot(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->Antibot()->Dump();
+}
+
+struct FloatParseResult {
+	bool Success;
+	float Value;
+	int Sign;
+};
+
+FloatParseResult ParseFloat(std::string Input)
+{
+	FloatParseResult Result;
+
+	try
+	{
+		Result.Value = abs(std::stof(Input));
+	}
+	catch (...)
+	{
+		Result.Success = false;
+		return Result;
+	}
+
+	Result.Sign = 0;
+	if (Input[0] == '+')
+		Result.Sign = 1;
+	if (Input[0] == '-')
+		Result.Sign = -1;
+
+	Result.Success = true;
+	return Result;
+}
+
+void CGameContext::ConBrush(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	int ClientID = pResult->m_ClientID;
+	if (!CheckClientID(ClientID))
+		return;
+
+	CPlayer* pPlayer = pSelf->m_apPlayers[ClientID];
+	if (!pPlayer)
+		return;
+
+	if (pResult->NumArguments() < 1)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "brush", "Usage: brush [heart|armor|shotgun|grenade|laser|ninja|wall] [wall-angle] [wall-length]");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "brush", "wall-angle and wall-length can be set relative to current value using sign (\"brush wall +45 -3\" will add 45 degrees to angle and subtract length by 3)");
+		return;
+	}
+
+	std::string pEntityName = pResult->GetString(0);
+
+	if (pEntityName == "round")
+	{
+		pPlayer->m_Brush.m_Rounding = true;
+	}
+	else if (pEntityName == "noround")
+	{
+		pPlayer->m_Brush.m_Rounding = false;
+	}
+	else if (pEntityName == "wall")
+	{
+		if (pPlayer->m_Brush.m_Entity != CGameWorld::ENTTYPE_LASER)
+		{
+			pPlayer->m_Brush.m_Entity = CGameWorld::ENTTYPE_LASER;
+			pPlayer->m_Brush.m_Data.m_Laser.m_Angle = pi / 2;
+			pPlayer->m_Brush.m_Data.m_Laser.m_Length = 1;
+		}
+
+		if (pResult->NumArguments() > 1)
+		{
+			std::string RawAngle = pResult->GetString(1);
+
+			FloatParseResult Angle = ParseFloat(RawAngle);
+			if (!Angle.Success)
+			{
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "brush", "Invalid argument format");
+				return;
+			}
+
+			if (Angle.Sign == 0)
+				pPlayer->m_Brush.m_Data.m_Laser.m_Angle = (Angle.Value + 90) * pi / 180;
+			else
+				pPlayer->m_Brush.m_Data.m_Laser.m_Angle += (Angle.Sign * Angle.Value) * pi / 180;
+		}
+
+		if (pResult->NumArguments() > 2)
+		{
+			std::string RawLength = pResult->GetString(2);
+
+			FloatParseResult Length = ParseFloat(RawLength);
+			if (!Length.Success)
+			{
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "brush", "Invalid argument format");
+				return;
+			}
+
+			if (Length.Sign == 0)
+				pPlayer->m_Brush.m_Data.m_Laser.m_Length = Length.Value;
+			else
+				pPlayer->m_Brush.m_Data.m_Laser.m_Length += Length.Sign * Length.Value;
+
+			pPlayer->m_Brush.m_Data.m_Laser.m_Length = maximum(0.f, pPlayer->m_Brush.m_Data.m_Laser.m_Length);
+		}
+	}
+	else
+	{
+		const std::map<std::string, std::tuple<int, int>> Entities = {
+			{"heart", {POWERUP_HEALTH, 0}},
+			{"armor", {POWERUP_ARMOR, 0}},
+			{"shotgun", {POWERUP_WEAPON, WEAPON_SHOTGUN}},
+			{"grenade", {POWERUP_WEAPON, WEAPON_GRENADE}},
+			{"laser", {POWERUP_WEAPON, WEAPON_LASER}},
+			{"ninja", {POWERUP_NINJA, 0}},
+		};
+
+		try
+		{
+			pPlayer->m_Brush.m_Entity = CGameWorld::ENTTYPE_PICKUP;
+			std::tie(
+				pPlayer->m_Brush.m_Data.m_Pickup.m_Type,
+				pPlayer->m_Brush.m_Data.m_Pickup.m_SubType
+			) = Entities.at(pEntityName);
+		}
+		catch (std::out_of_range&)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "brush", "Invalid entity");
+			return;
+		}
+	}
+}
+
+void CGameContext::ConDraw(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	int ClientID = pResult->m_ClientID;
+	if (!CheckClientID(ClientID))
+		return;
+
+	CPlayer* pPlayer = pSelf->m_apPlayers[ClientID];
+	if (!pPlayer)
+		return;
+
+	vec2 Pos = pPlayer->m_ViewPos;
+	if (pPlayer->IsPlaying() && !pPlayer->IsPaused())
+		Pos += pPlayer->m_TargetPos;
+
+	if (pPlayer->m_Brush.m_Rounding)
+	{
+		Pos.x -= (int) Pos.x % 32 - 16;
+		Pos.y -= (int) Pos.y % 32 - 16;
+	}
+
+	switch (pPlayer->m_Brush.m_Entity)
+	{
+		case CGameWorld::ENTTYPE_PICKUP:
+		{
+			CPickup *pPickup = new CPickup
+			(
+				&pSelf->m_World,
+				pPlayer->m_Brush.m_Data.m_Pickup.m_Type,
+				pPlayer->m_Brush.m_Data.m_Pickup.m_SubType,
+				LAYER_GAME
+			);
+			pPickup->m_Pos = Pos;
+			break;
+		}
+
+		case CGameWorld::ENTTYPE_LASER:
+		{
+			new CDoor
+			(
+				&pSelf->m_World,
+				Pos,
+				pPlayer->m_Brush.m_Data.m_Laser.m_Angle,
+				32 * pPlayer->m_Brush.m_Data.m_Laser.m_Length,
+				0
+			);
+		}
+	}
+}
+
+void CGameContext::ConErase(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	int ClientID = pResult->m_ClientID;
+	if (!CheckClientID(ClientID))
+		return;
+
+	CPlayer* pPlayer = pSelf->m_apPlayers[ClientID];
+	if (!pPlayer)
+		return;
+
+	vec2 Pos = pPlayer->m_ViewPos;
+	if (pPlayer->IsPlaying() && !pPlayer->IsPaused())
+		Pos += pPlayer->m_TargetPos;
+
+	CEntity* pEnt;
+	int Found = pSelf->m_World.FindEntities(Pos, 16.0f, &pEnt, 1, CGameWorld::ENTTYPE_PICKUP) ||
+				pSelf->m_World.FindEntities(Pos, 16.0f, &pEnt, 1, CGameWorld::ENTTYPE_LASER);
+	if (!Found)
+		return;
+
+	pSelf->m_World.DestroyEntity(pEnt);
 }
 
 void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)

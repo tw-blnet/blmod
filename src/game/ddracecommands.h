@@ -57,6 +57,9 @@ CONSOLE_COMMAND("save_dry", "", CFGFLAG_SERVER, ConDrySave, this, "Dump the curr
 CONSOLE_COMMAND("freezehammer", "v[id]", CFGFLAG_SERVER|CMDFLAG_TEST, ConFreezeHammer, this, "Gives a player Freeze Hammer")
 CONSOLE_COMMAND("unfreezehammer", "v[id]", CFGFLAG_SERVER|CMDFLAG_TEST, ConUnFreezeHammer, this, "Removes Freeze Hammer from a player")
 
+CONSOLE_COMMAND("brush", "?s[entity] ?s[wall-angle] ?s[wall-length]", CFGFLAG_SERVER, ConBrush, this, "Select entity to draw");
+CONSOLE_COMMAND("draw", "", CFGFLAG_SERVER, ConDraw, this, "Place entity");
+CONSOLE_COMMAND("erase", "", CFGFLAG_SERVER, ConErase, this, "Destroy entity");
 CONSOLE_COMMAND("rainbow", "v[id] ?s[option]", CFGFLAG_SERVER, ConRainbow, this, "Gives a player rainbow (or remove if option is empty)");
 CONSOLE_COMMAND("skinchanger", "v[id] i[value]", CFGFLAG_SERVER, ConSkinChanger, this, "Sets whether player has skin changer");
 CONSOLE_COMMAND("tail", "v[id] i[value]", CFGFLAG_SERVER, ConTail, this, "Sets whether player has tail");

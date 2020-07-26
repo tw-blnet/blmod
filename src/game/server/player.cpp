@@ -146,6 +146,13 @@ void CPlayer::Reset()
 	m_NotEligibleForFinish = false;
 	m_EligibleForFinishCheck = 0;
 	m_VotedForPractice = false;
+
+	m_Account.m_Authenticated = false;
+
+	m_Brush.m_Entity = CGameWorld::ENTTYPE_PICKUP;
+	m_Brush.m_Rounding = true;
+	m_Brush.m_Data.m_Pickup.m_Type = POWERUP_HEALTH;
+	m_Brush.m_Data.m_Pickup.m_SubType = 0;
 }
 
 static int PlayerFlags_SevenToSix(int Flags)
