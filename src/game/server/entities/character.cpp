@@ -2717,12 +2717,10 @@ void CCharacter::OnFlagPickup(int Color)
 		SetRainbow(true);
 
 	SetRainbowMode(RAINBOW_FLAG_RED + Color);
-	SetTail(true);
 }
 
 void CCharacter::OnFlagDrop(int Color)
 {
 	SetRainbow(m_PrevRainbow);
 	SetRainbowMode(m_PrevRainbowMode);
-	SetTail(false);
 }
