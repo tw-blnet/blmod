@@ -1483,6 +1483,60 @@ void CGameContext::ConArena(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
+	if (pResult->NumArguments() == 0)
+	{
+		const IConsole::CCommandInfo *pCmdInfo = pSelf->Console()->GetCommandInfo("1vs1", CFGFLAG_SERVER, false);
+
+		if (!pCmdInfo->m_pParams)
+			return;
+
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Usage: %s %s", pCmdInfo->m_pName, pCmdInfo->m_pParams);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+
+		const char* pPlayerName = pSelf->Server()->ClientName(pResult->m_ClientID);
+		char pSamplePlayerName[MAX_NAME_LENGTH];
+		if (str_find(pPlayerName, " ") != NULL)
+			str_format(pSamplePlayerName, sizeof(pSamplePlayerName), "\"%s\"", pPlayerName);
+		else
+			str_copy(pSamplePlayerName, pPlayerName, sizeof(pSamplePlayerName));
+
+		const char* pSampleArenaName = "arena";
+		if (pArenasManager->ArenasCount() >= 1)
+		{
+			int ArenaID = pArenasManager->GetArenaByIndex(pArenasManager->ArenasCount() - 1);
+			pSampleArenaName = pArenasManager->GetArenaName(ArenaID);
+		}
+
+		str_format(aBuf, sizeof(aBuf), "Example: /%s %s", pCmdInfo->m_pName, pSamplePlayerName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "Example: /%s %s %s", pCmdInfo->m_pName, pSamplePlayerName, pSampleArenaName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "Example: /%s %s %s 15", pCmdInfo->m_pName, pSamplePlayerName, pSampleArenaName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "Example: /%s %s %s 7 shotgun,grenade,laser,endless", pCmdInfo->m_pName, pSamplePlayerName, pSampleArenaName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "Arenas list: ");
+		for (int i = 0; i < pArenasManager->ArenasCount(); i++)
+		{
+			int ArenaID = pArenasManager->GetArenaByIndex(i);
+			const char* pArenaName = pArenasManager->GetArenaName(ArenaID);
+
+			int Len = str_length(aBuf);
+			if (i == 0)
+				str_format(aBuf + Len, sizeof(aBuf) - Len, "%s", pArenaName);
+			else
+				str_format(aBuf + Len, sizeof(aBuf) - Len, ", %s", pArenaName);
+		}
+
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", aBuf);
+		return;
+	}
+
 	int Creator = pResult->m_ClientID;
 	int Target = pSelf->GetClientIDByName(pResult->GetString(0));
 
@@ -1492,7 +1546,70 @@ void CGameContext::ConArena(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	pArenasManager->NewFight(std::vector<int>{Creator, Target}, 5, 0, 0, 0, 0);
+	int ArenaID = -1;
+	if (pResult->NumArguments() > 1)
+	{
+		const char* pArenaName = pResult->GetString(1);
+		ArenaID = pArenasManager->FindArena(pArenaName);
+		if (ArenaID == -1)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Invalid arena name");
+			return;
+		}
+	}
+
+	int ScoreLimit = 5;
+	if (pResult->NumArguments() > 2)
+	{
+		ScoreLimit = pResult->GetInteger(2);
+		if (ScoreLimit < 1)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Invalid score limit");
+			return;
+		}
+	}
+
+	bool Shotgun = false;
+	bool Grenade = false;
+	bool Laser = false;
+	bool Endless = false;
+	if (pResult->NumArguments() > 3)
+	{
+		const char* pWeapons = pResult->GetString(3);
+
+		char aBuf[64];
+		for (const char* pPart = pWeapons; (pPart = str_next_token(pPart, ",", aBuf, sizeof(aBuf)));)
+		{
+			if (str_comp_nocase(aBuf, "shotgun") == 0)
+			{
+				Shotgun = true;
+				continue;
+			}
+
+			if (str_comp_nocase(aBuf, "grenade") == 0)
+			{
+				Grenade = true;
+				continue;
+			}
+
+			if (str_comp_nocase(aBuf, "Laser") == 0)
+			{
+				Laser = true;
+				continue;
+			}
+
+			if (str_comp_nocase(aBuf, "endless") == 0)
+			{
+				Endless = true;
+				continue;
+			}
+
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "arena", "Invalid weapons list");
+			return;
+		}
+	}
+
+	pArenasManager->NewFight(std::vector<int>{Creator, Target}, ArenaID, ScoreLimit, Shotgun, Grenade, Laser, Endless);
 }
 
 void CGameContext::ConArenaAccept(IConsole::IResult *pResult, void *pUserData)

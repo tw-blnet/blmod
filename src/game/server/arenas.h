@@ -39,10 +39,10 @@ class CArenasManager
 
 		int m_ArenaID;
 		int m_ScoreLimit;
-		int m_Shotgun;
-		int m_Grenade;
-		int m_Laser;
-		int m_Endless;
+		bool m_Shotgun;
+		bool m_Grenade;
+		bool m_Laser;
+		bool m_Endless;
 	};
 
 	struct CArena
@@ -68,7 +68,7 @@ public:
 	int GetArenaByIndex(unsigned int Index); // return arena id or -1
 	void RemoveArena(int ArenaID);
 
-	int NewFight(std::vector<int> Participants, int ScoreLimit, int Shotgun, int Grenade, int Laser, int Endless);
+	int NewFight(std::vector<int> Participants, int Arena, int ScoreLimit, bool Shotgun, bool Grenade, bool Laser, bool Endless);
 	void EndFight(int Fight);
 
 	bool IsInvited(int Creator, int ClientID);

@@ -97,7 +97,7 @@ void CArenasManager::RemoveArena(int ArenaID)
 	m_aArenas.erase(iter);
 }
 
-int CArenasManager::NewFight(std::vector<int> Participants, int ScoreLimit, int Shotgun, int Grenade, int Laser, int Endless)
+int CArenasManager::NewFight(std::vector<int> Participants, int Arena, int ScoreLimit, bool Shotgun, bool Grenade, bool Laser, bool Endless)
 {
 	if (Participants.size() < 2)
 		return -1;
@@ -134,13 +134,23 @@ int CArenasManager::NewFight(std::vector<int> Participants, int ScoreLimit, int 
 	if (m_aArenas.size() == 0)
 		return -1;
 
+	int CheckedArenaID = Arena;
+	if (CheckedArenaID == -1)
+		CheckedArenaID = m_aArenas.begin()->first;
+
+	if (m_aArenas.count(CheckedArenaID) == 0)
+	{
+		m_pGameContext->SendChatTarget(Creator, "[Arena] Invalid arena name");
+		return -1;
+	}
+
 	int id = -1;
 	while (id < 0 || m_aFights.count(id))
 		id = frandom() * 9999;
 
 	CFight *pFight = &m_aFights[id];
-	pFight->m_ArenaID = m_aArenas.begin()->first;
-	pFight->m_ScoreLimit = ScoreLimit;
+	pFight->m_ArenaID = CheckedArenaID;
+	pFight->m_ScoreLimit = maximum(ScoreLimit, 1);
 	pFight->m_Shotgun = Shotgun;
 	pFight->m_Grenade = Grenade;
 	pFight->m_Laser = Laser;
@@ -149,7 +159,6 @@ int CArenasManager::NewFight(std::vector<int> Participants, int ScoreLimit, int 
 	pFight->m_RoundsPlayed = 0;
 	pFight->m_MatchStartTick = -1;
 	pFight->m_Team = -1;
-
 
 	m_pGameContext->SendChatTarget(Creator, "[Arena] You have sent invite to player");
 
@@ -167,7 +176,19 @@ int CArenasManager::NewFight(std::vector<int> Participants, int ScoreLimit, int 
 		if (Participant.m_Status != PARTICIPANT_OWNER)
 		{
 			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "[Arena] You have been invited to a fight by %s!", m_pGameContext->Server()->ClientName(Creator));
+			str_format
+			(
+				aBuf, sizeof(aBuf),
+				"[Arena] You have been invited to a fight by %s on arena %s up to %d kills with this weapons: %s%s%s%s%s",
+				m_pGameContext->Server()->ClientName(Creator),
+				m_aArenas[CheckedArenaID].m_Name,
+				ScoreLimit,
+				Shotgun ? "shotgun " : "",
+				Grenade ? "grenade " : "",
+				Laser ? "laser " : "",
+				Endless ? "endless" : "",
+				(!Shotgun && !Grenade && !Laser && !Endless) ? "no additional" : ""
+			);
 			m_pGameContext->SendChatTarget(ClientID, aBuf);
 
 			str_format(aBuf, sizeof(aBuf), "[Arena] Use `/accept %s` or `/decline %s`", m_pGameContext->Server()->ClientName(Creator), m_pGameContext->Server()->ClientName(Creator));
@@ -531,7 +552,7 @@ void CArenasManager::Respawn(int Fight)
 		pChr->UnFreeze();
 		pChr->Freeze(1);
 
-		pChr->m_EndlessHook = false;
+		pChr->m_EndlessHook = pFight->m_Endless;
 
 		pChr->SetWeaponGot(WEAPON_GUN, true);
 		pChr->SetWeaponGot(WEAPON_SHOTGUN, pFight->m_Shotgun);

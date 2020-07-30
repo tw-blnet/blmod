@@ -58,7 +58,7 @@ CHAT_COMMAND("timer", "?s['default'|'gametimer'|'broadcast'|'both'|'none']", CFG
 
 CHAT_COMMAND("kill", "", CFGFLAG_CHAT|CFGFLAG_SERVER|CFGFLAG_HIDDEN, ConProtectedKill, this, "Kill yourself")
 
-CHAT_COMMAND("1vs1", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArena, this, "Invite player to fight on arena")
+CHAT_COMMAND("1vs1", "?s[player name] ?s[arena] ?i[scores limit] ?s[weapons]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArena, this, "Invite player to fight on arena")
 CHAT_COMMAND("accept", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArenaAccept, this, "Accept fight invitation")
 CHAT_COMMAND("decline", "r[player name]", CFGFLAG_CHAT|CFGFLAG_SERVER, ConArenaDecline, this, "Decline fight invitation")
 
