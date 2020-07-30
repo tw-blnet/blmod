@@ -152,7 +152,7 @@ public:
 
 	virtual void PostReset();
 
-	bool DropFlag(class CCharacter *pChr);
+	bool DropFlag(int ClientID);
 
 	// DDRace
 

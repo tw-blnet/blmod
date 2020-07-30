@@ -1952,7 +1952,7 @@ void CCharacter::HandleTiles(int Index)
 
 		if (SecondsPassed > 1.0f)
 		{
-			GameServer()->m_pController->DropFlag(this);
+			GameServer()->m_pController->DropFlag(GetPlayer()->GetCID());
 
 			int MapOption = Server()->GetClientMapOption(GetPlayer()->GetCID()) + 1;
 			if (MapOption >= g_Config.m_SvMapOptionsCount)
@@ -1965,7 +1965,7 @@ void CCharacter::HandleTiles(int Index)
 	// flag protection
 	if (m_TileIndex == TILE_NOFLAG || m_TileFIndex == TILE_NOFLAG)
 	{
-		GameServer()->m_pController->DropFlag(this);
+		GameServer()->m_pController->DropFlag(GetPlayer()->GetCID());
 	}
 
 	// stopper

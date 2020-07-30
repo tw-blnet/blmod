@@ -540,7 +540,7 @@ void CArenasManager::Respawn(int Fight)
 		pChr->SetWeaponGot(WEAPON_NINJA, false);
 		pChr->SetWeapon(WEAPON_HAMMER);
 
-		pGameControllerDDRace->DropFlag(pChr);
+		pGameControllerDDRace->DropFlag(participant.m_ClientID);
 
 		pGameControllerDDRace->m_Teams.SetForceCharacterTeam(participant.m_ClientID, pFight->m_Team);
 	}

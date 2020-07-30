@@ -2237,7 +2237,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!pChr)
 				return;
 
-			bool Result = m_pController->DropFlag(pChr);
+			bool Result = m_pController->DropFlag(ClientID);
 			if (Result) {
 				return;
 			}

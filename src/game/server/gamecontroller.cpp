@@ -406,7 +406,7 @@ void IGameController::PostReset()
 
 int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
-	DropFlag(pVictim);
+	DropFlag(pVictim->GetPlayer()->GetCID());
 
     return 0;
 }
@@ -544,7 +544,7 @@ void IGameController::Tick()
 			}
 
 			if (F->m_CarrierFreezedTick && (Server()->Tick() - F->m_CarrierFreezedTick >= Server()->TickSpeed()*10)) {
-				DropFlag(F->GetCarryingCharacter());
+				DropFlag(F->GetCarryingCharacter()->GetPlayer()->GetCID());
 			}
 		}
 		else
@@ -826,16 +826,20 @@ int IGameController::ClampTeam(int Team)
 	return 0;
 }
 
-bool IGameController::DropFlag(class CCharacter *pChr)
+bool IGameController::DropFlag(int ClientID)
 {
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || !m_pGameServer->IsClientPlayer(ClientID))
+		return false;
+
 	for (int fi = 0; fi < 2; fi++)
 	{
 		CFlag *F = m_apFlags[fi];
 		if (!F)
 			continue;
 
-		if (F->GetCarryingCharacter() && F->GetCarryingCharacter()->GetPlayer()->GetCID() == pChr->GetPlayer()->GetCID()) {
-			F->GetCarryingCharacter()->OnFlagDrop(fi);
+		CCharacter* pChr = F->GetCarryingCharacter();
+		if (pChr && pChr->GetPlayer()->GetCID() == ClientID) {
+			pChr->OnFlagDrop(fi);
 
 			vec2 dir;
 			dir.x = cos(pChr->GetCore().m_Angle / 256.f);
