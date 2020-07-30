@@ -2633,6 +2633,38 @@ void CGameContext::ConAddArena(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
+void CGameContext::ConDefaultArena(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	const char *pArenaName = pResult->GetString(0);
+
+	if(!pSelf->m_pController)
+		return;
+
+	int Arena = pSelf->m_pController->m_ArenasManager.FindArena(pArenaName);
+	if (Arena < 0)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Can't set arena `%s` as default (no arena with such name)", pArenaName);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	bool Result = pSelf->m_pController->m_ArenasManager.SetDefaultArena(Arena);
+	if (!Result)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Failed to set arena `%s` (id %d) as default", pArenaName, Arena);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		return;
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "Set arena `%s` as default", pArenaName);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+}
+
 void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -2912,6 +2944,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("set_team", "i[id] i[team-id] ?i[delay in minutes]", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");
 	Console()->Register("set_team_all", "i[team-id]", CFGFLAG_SERVER, ConSetTeamAll, this, "Set team of all players to team");
 	Console()->Register("add_arena", "s[name] i[tele]", CFGFLAG_SERVER|CFGFLAG_GAME, ConAddArena, this, "Add arena");
+	Console()->Register("default_arena", "s[name]", CFGFLAG_SERVER|CFGFLAG_GAME, ConDefaultArena, this, "Set default arena");
 
 	Console()->Register("add_vote", "s[name] r[command]", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "s[name]", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");

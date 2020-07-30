@@ -56,12 +56,15 @@ class CArenasManager
 	std::map<int, CFight> m_aFights;
 	std::map<int, CArena> m_aArenas;
 
+	int m_DefaultArena = -1;
+
 public:
 	CArenasManager(class CGameContext *pGameServer);
 
 	void Tick();
 
 	int AddArena(const char *pName, int Tele); // return arena id
+	bool SetDefaultArena(int ArenaID);
 	int ArenasCount();
 	int FindArena(const char *pName); // return arena id or -1
 	const char* GetArenaName(int ArenaID);

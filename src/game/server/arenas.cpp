@@ -56,6 +56,15 @@ int CArenasManager::AddArena(const char *pName, int Tele)
 	return id;
 }
 
+bool CArenasManager::SetDefaultArena(int ArenaID)
+{
+	if (m_aArenas.count(ArenaID) == 0)
+		return false;
+
+	m_DefaultArena = ArenaID;
+	return true;
+}
+
 int CArenasManager::ArenasCount()
 {
 	return m_aArenas.size();
@@ -93,6 +102,9 @@ void CArenasManager::RemoveArena(int ArenaID)
 	auto iter = m_aArenas.find(ArenaID);
 	if (iter == m_aArenas.end())
 		return;
+
+	if (m_DefaultArena == ArenaID)
+		m_DefaultArena = -1;
 
 	m_aArenas.erase(iter);
 }
@@ -136,7 +148,7 @@ int CArenasManager::NewFight(std::vector<int> Participants, int Arena, int Score
 
 	int CheckedArenaID = Arena;
 	if (CheckedArenaID == -1)
-		CheckedArenaID = m_aArenas.begin()->first;
+		CheckedArenaID = m_DefaultArena != -1 ? m_DefaultArena : m_aArenas.begin()->first;
 
 	if (m_aArenas.count(CheckedArenaID) == 0)
 	{
