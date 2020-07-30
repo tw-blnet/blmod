@@ -2253,7 +2253,7 @@ bool CSqlScore::LinkDiscordThread(CSqlServer* pSqlServer, const CSqlData<CScoreA
 	return false;
 }
 
-void CSqlScore::GiveExperience(int ClientID, int Count)
+void CSqlScore::GiveExperience(int ClientID, int Count, int Multiplier)
 {
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientID];
 	if (!pCurPlayer)
@@ -2266,6 +2266,7 @@ void CSqlScore::GiveExperience(int ClientID, int Count)
 	CSqlExperienceData *Tmp = new CSqlExperienceData(pCurPlayer->m_ScoreExperienceResult);
 	Tmp->m_UserID = pCurPlayer->m_Account.m_UserID;
 	Tmp->m_Count = Count;
+	Tmp->m_Multiplier = Multiplier;
 
 	thread_init_and_detach(CSqlExecData<CScoreExperienceResult>::ExecSqlFunc,
 			new CSqlExecData<CScoreExperienceResult>(GiveExperienceThread, Tmp),
@@ -2301,8 +2302,9 @@ bool CSqlScore::GiveExperienceThread(CSqlServer* pSqlServer, const CSqlData<CSco
 			return false;
 		}
 
-		pData->m_pResult->m_Experience = pSqlServer->GetResults()->getInt("experience") + pData->m_Count;
+		pData->m_pResult->m_Experience = pSqlServer->GetResults()->getInt("experience") + pData->m_Count * pData->m_Multiplier;
 		pData->m_pResult->m_ExperienceIncrement = pData->m_Count;
+		pData->m_pResult->m_ExperienceMultiplier = pData->m_Multiplier;
 		pData->m_pResult->m_Level = pSqlServer->GetResults()->getInt("level");
 		pData->m_pResult->m_LevelUp = false;
 

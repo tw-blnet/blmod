@@ -152,6 +152,7 @@ public:
 
 	virtual void PostReset();
 
+	bool IsPlayerFlagCarrier(int ClientID);
 	bool DropFlag(int ClientID);
 
 	// DDRace

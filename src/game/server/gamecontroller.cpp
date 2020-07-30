@@ -826,6 +826,25 @@ int IGameController::ClampTeam(int Team)
 	return 0;
 }
 
+bool IGameController::IsPlayerFlagCarrier(int ClientID)
+{
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS || !m_pGameServer->IsClientPlayer(ClientID))
+		return false;
+
+	for (int fi = 0; fi < 2; fi++)
+	{
+		CFlag *F = m_apFlags[fi];
+		if (!F)
+			continue;
+
+		CCharacter* pChr = F->GetCarryingCharacter();
+		if (pChr && pChr->GetPlayer()->GetCID() == ClientID)
+			return true;
+	}
+
+	return false;
+}
+
 bool IGameController::DropFlag(int ClientID)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS || !m_pGameServer->IsClientPlayer(ClientID))

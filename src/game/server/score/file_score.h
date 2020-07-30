@@ -89,7 +89,7 @@ public:
 	virtual void ChangePassword(int ClientID, const char* Password) {}
 	virtual void LinkDiscord(int ClientID) {}
 
-	virtual void GiveExperience(int ClientID, int Count) {}
+	virtual void GiveExperience(int ClientID, int Count, int Multiplier) {}
 
 	virtual void LoadStats(int ClientID) {}
 	virtual void RegisterStats(int ClientID, int Action) {}

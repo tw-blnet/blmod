@@ -323,6 +323,9 @@ MACRO_CONFIG_INT(SvAccountRegisterInterval, sv_account_register_interval, 1440, 
 MACRO_CONFIG_INT(SvDiscordCodeLifetime, sv_discord_code_lifetime, 10, 0, 0, CFGFLAG_SERVER, "Discord link code lifetime in minutes for account registration limit")
 MACRO_CONFIG_STR(SvDiscordLinkMessage, sv_discord_link_message, 512, "To link your Discord account, join Discord server and write this private message to bot: \"link %06d\". This code will be valid for next %d minutes", CFGFLAG_SERVER, "Message format for linking account to Discord")
 
+MACRO_CONFIG_INT(SvFlagMultiplierRace, sv_flag_multiplier_race, 2, 0, 0, CFGFLAG_SERVER, "Experience multiplier for finishing race for flag carrier")
+MACRO_CONFIG_INT(SvFlagMultiplierBlock, sv_flag_multiplier_block, 2, 0, 0, CFGFLAG_SERVER, "Experience multiplier for blocking for flag carrier")
+
 MACRO_CONFIG_INT(SvRaceExperience, sv_race_experience, 2, 0, 0, CFGFLAG_SERVER, "Count of awarded experience points for finished race")
 
 MACRO_CONFIG_INT(SvBlockExperience, sv_block_experience, 1, 0, 0, CFGFLAG_SERVER, "Count of awarded experience points for registered block")

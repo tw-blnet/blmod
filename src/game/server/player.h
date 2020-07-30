@@ -223,7 +223,7 @@ public:
 	bool m_Halloween;
 	bool m_FirstPacket;
 	int64 m_LastSQLQuery;
-	void ShowLevelProgress(int ExperienceIncrement=0);
+	void ShowLevelProgress(int ExperienceIncrement = 0, int ExperienceMultiplier = 1);
 	void ProcessScoreResult(CScorePlayerResult &Result);
 	std::shared_ptr<CScorePlayerResult> m_ScoreQueryResult;
 	std::shared_ptr<CScorePlayerResult> m_ScoreFinishResult;

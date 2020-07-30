@@ -965,7 +965,7 @@ void CPlayer::SpectatePlayerName(const char *pName)
 	}
 }
 
-void CPlayer::ShowLevelProgress(int ExperienceIncrement)
+void CPlayer::ShowLevelProgress(int ExperienceIncrement, int ExperienceMultiplier)
 {
 	char aBuf[256];
 
@@ -974,7 +974,10 @@ void CPlayer::ShowLevelProgress(int ExperienceIncrement)
 		int NextLevelExp = GameServer()->Score()->ExperienceRequired(m_Account.m_Level+1);
 
 		if (ExperienceIncrement)
-			str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d (+%d)", m_Account.m_Level, m_Account.m_Experience, NextLevelExp, ExperienceIncrement);
+			if (ExperienceMultiplier == 1)
+				str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d (+%d)", m_Account.m_Level, m_Account.m_Experience, NextLevelExp, ExperienceIncrement);
+			else
+				str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d (+%d×%d)", m_Account.m_Level, m_Account.m_Experience, NextLevelExp, ExperienceIncrement, ExperienceMultiplier);
 		else
 			str_format(aBuf, sizeof(aBuf), "Level: %d\nExp: %d/%d", m_Account.m_Level, m_Account.m_Experience, NextLevelExp);
 	}
@@ -1184,7 +1187,7 @@ void CPlayer::ProcessExperienceResult(CScoreExperienceResult &Result)
 		m_Account.m_Level = Result.m_Level;
 		m_Score = m_Account.m_Level;
 
-		ShowLevelProgress(Result.m_ExperienceIncrement);
+		ShowLevelProgress(Result.m_ExperienceIncrement, Result.m_ExperienceMultiplier);
 	}
 }
 

@@ -160,6 +160,7 @@ struct CScoreExperienceResult
 	int m_Level;
 	int m_Experience;
 	int m_ExperienceIncrement;
+	int m_ExperienceMultiplier;
 };
 
 enum
@@ -252,7 +253,7 @@ public:
 	virtual void LinkDiscord(int ClientID) = 0;
 
 	static int ExperienceRequired(int Level);
-	virtual void GiveExperience(int ClientID, int Count) = 0;
+	virtual void GiveExperience(int ClientID, int Count, int Multiplier = 1) = 0;
 
 	virtual void LoadStats(int ClientID) = 0;
 	virtual void RegisterStats(int ClientID, int Action) = 0;

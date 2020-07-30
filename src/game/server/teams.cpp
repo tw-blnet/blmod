@@ -609,7 +609,8 @@ void CGameTeams::OnFinish(CPlayer* Player, float Time, const char *pTimestamp)
 			GameServer()->Score()->SaveScore(ClientID, Time, pTimestamp,
 					GetCpCurrent(Player), Player->m_NotEligibleForFinish);
 
-	m_pGameContext->Score()->GiveExperience(ClientID, g_Config.m_SvRaceExperience);
+    bool IsFlagCarrier = m_pGameContext->m_pController->IsPlayerFlagCarrier(ClientID);
+    m_pGameContext->Score()->GiveExperience(ClientID, g_Config.m_SvRaceExperience, IsFlagCarrier ? g_Config.m_SvFlagMultiplierRace : 1);
 	m_pGameContext->Score()->RegisterStats(ClientID, ACTION_RACE);
 
 	bool NeedToSendNewRecord = false;

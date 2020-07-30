@@ -21,7 +21,8 @@ bool CBlockTracker::Blocked(int ClientID, int BlockerID)
     if (!m_pGameContext->PlayerExists(ClientID) || !m_pGameContext->PlayerExists(BlockerID)) return false;
     if (m_pGameContext->Server()->IsClientsSameAddr(ClientID, BlockerID)) return false;
 
-    m_pGameContext->Score()->GiveExperience(BlockerID, g_Config.m_SvBlockExperience);
+    bool IsBlockerFlagCarrier = m_pGameContext->m_pController->IsPlayerFlagCarrier(BlockerID);
+    m_pGameContext->Score()->GiveExperience(BlockerID, g_Config.m_SvBlockExperience, IsBlockerFlagCarrier ? g_Config.m_SvFlagMultiplierBlock : 1);
     m_pGameContext->Score()->RegisterStats(BlockerID, ACTION_BLOCK_KILL);
     m_pGameContext->Score()->RegisterStats(ClientID, ACTION_BLOCK_DEATH);
 
