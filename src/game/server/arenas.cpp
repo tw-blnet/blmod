@@ -562,7 +562,7 @@ void CArenasManager::Respawn(int Fight)
 
 		pChr->m_DeepFreeze = 0;
 		pChr->UnFreeze();
-		pChr->Freeze(1);
+		pChr->Freeze(g_Config.m_SvArenaFreezeDelay);
 
 		pChr->m_EndlessHook = pFight->m_Endless;
 

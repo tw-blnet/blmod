@@ -314,6 +314,7 @@ MACRO_CONFIG_INT(SvDefaultTimerType, sv_default_timer_type, 0, 0, 3, CFGFLAG_SER
 
 MACRO_CONFIG_INT(SvSnapTeams, sv_snap_teams, 0, 0, 1, CFGFLAG_SERVER, "Whether players teams numbers should be visible")
 MACRO_CONFIG_INT(SvAllowArenas, sv_allow_1vs1, 1, 0, 1, CFGFLAG_SERVER, "Allow 1vs1 fights")
+MACRO_CONFIG_INT(SvArenaFreezeDelay, sv_arena_freeze_delay, 3, 1, 30, CFGFLAG_SERVER|CFGFLAG_GAME, "How long players will be frozen in new round")
 
 MACRO_CONFIG_INT(SvAccountLogin, sv_account_login, 1, 0, 1, CFGFLAG_SERVER, "Allow login")
 MACRO_CONFIG_INT(SvAccountRegister, sv_account_register, 1, 0, 1, CFGFLAG_SERVER, "Allow register new account")
