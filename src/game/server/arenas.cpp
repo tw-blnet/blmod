@@ -65,6 +65,11 @@ bool CArenasManager::SetDefaultArena(int ArenaID)
 	return true;
 }
 
+int CArenasManager::GetDefaultArena()
+{
+	return m_DefaultArena;
+}
+
 int CArenasManager::ArenasCount()
 {
 	return m_aArenas.size();
@@ -84,6 +89,14 @@ const char* CArenasManager::GetArenaName(int ArenaID)
 		return 0;
 
 	return m_aArenas[ArenaID].m_Name;
+}
+
+int CArenasManager::GetArenaTeleOut(int ArenaID)
+{
+	if (m_aArenas.count(ArenaID) == 0)
+		return -1;
+
+	return m_aArenas[ArenaID].m_Tele;
 }
 
 int CArenasManager::GetArenaByIndex(unsigned int Index)

@@ -174,6 +174,8 @@ public:
 
 	bool m_Moderating;
 
+	bool m_ArenaNonStop;
+
 	struct
 	{
 		bool m_Authenticated;

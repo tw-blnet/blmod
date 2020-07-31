@@ -65,9 +65,11 @@ public:
 
 	int AddArena(const char *pName, int Tele); // return arena id
 	bool SetDefaultArena(int ArenaID);
+	int GetDefaultArena();
 	int ArenasCount();
 	int FindArena(const char *pName); // return arena id or -1
 	const char* GetArenaName(int ArenaID);
+	int GetArenaTeleOut(int ArenaID);
 	int GetArenaByIndex(unsigned int Index); // return arena id or -1
 	void RemoveArena(int ArenaID);
 

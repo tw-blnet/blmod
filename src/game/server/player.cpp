@@ -763,6 +763,20 @@ void CPlayer::TryRespawn()
 	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos))
 		return;
 
+	if(m_ArenaNonStop)
+	{
+		CGameControllerDDRace *pGameControllerDDRace = (CGameControllerDDRace *)GameServer()->m_pController;
+		CArenasManager *pArenasManager = &pGameControllerDDRace->m_ArenasManager;
+		int DefaultArenaID = pArenasManager->GetDefaultArena();
+		int TeleTo = pArenasManager->GetArenaTeleOut(DefaultArenaID);
+
+		if(TeleTo >= 0 && pGameControllerDDRace->m_TeleOuts[TeleTo-1].size())
+		{
+			int TeleOut = GameServer()->m_World.m_Core.RandomOr0(pGameControllerDDRace->m_TeleOuts[TeleTo-1].size());
+			SpawnPos = pGameControllerDDRace->m_TeleOuts[TeleTo-1][TeleOut];
+		}
+	}
+
 	m_WeakHookSpawn = false;
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);

@@ -1471,6 +1471,21 @@ int CGameContext::GetClientIDByName(const char* pName)
 	return ClientID;
 }
 
+void CGameContext::ConNonStop(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!CheckClientID(pResult->m_ClientID) || !pSelf->IsClientPlayer(pResult->m_ClientID))
+		return;
+
+	CPlayer* pPlayer = pSelf->m_apPlayers[pResult->m_ClientID];
+	pPlayer->m_ArenaNonStop = !pPlayer->m_ArenaNonStop;
+
+	if (pPlayer->m_ArenaNonStop)
+		pSelf->SendChatTarget(pResult->m_ClientID, "You entered arena non-stop mode");
+	else
+		pSelf->SendChatTarget(pResult->m_ClientID, "You left arena non-stop mode");
+}
+
 void CGameContext::ConArena(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
