@@ -13,17 +13,19 @@
 
 #include <list>
 
-class CAntibot;
-class CGameTeams;
-class CSaveTee;
-struct CAntibotCharacterData;
-
 enum
 {
 	WEAPON_GAME = -3, // team switching etc
 	WEAPON_SELF = -2, // console kill command
 	WEAPON_WORLD = -1, // death tiles etc
 };
+
+#include <game/server/entities/rainbow.h>
+
+class CAntibot;
+class CGameTeams;
+class CSaveTee;
+struct CAntibotCharacterData;
 
 enum
 {
@@ -42,8 +44,12 @@ enum
 	RAINBOW_GREY,
 	RAINBOW_FLAME,
 	RAINBOW_ICE,
+	RAINBOW_FROG,
+	RAINBOW_PINK,
+	RAINBOW_PURPLE,
 	RAINBOW_FLAG_RED,
 	RAINBOW_FLAG_BLUE,
+	RAINBOW_TRAFFICLIGHT,
 	NUM_RAINBOWS
 };
 
