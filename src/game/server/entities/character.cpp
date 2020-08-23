@@ -822,7 +822,7 @@ void CCharacter::Tick()
 		}
 		case RAINBOW_FROG:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 63, 0xFF, 0x00, 13, HUE, 96, 1);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 63, 0x64, 0x00, 13, HUE, 96, 1);
 			break;
 		}
 		case RAINBOW_FLAG_RED:
