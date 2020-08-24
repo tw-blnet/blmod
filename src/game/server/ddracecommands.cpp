@@ -984,6 +984,7 @@ void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)
 	}
 
 	const char *pDesiredOptionName = pResult->NumArguments() > 1 ? pResult->GetString(1) : "";
+
 	int DesiredOption = -1;
 	for (int i = 0; i < NUM_RAINBOWS; i++)
 	{
@@ -997,7 +998,55 @@ void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)
 	CCharacter* pChr = pSelf->GetPlayerChar(Target);
 	if (!pChr)
 		return;
-
+	if (DesiredOption == RAINBOW_CUSTOM)
+	{
+		if (pResult->NumArguments() < 6)
+		{
+			return;
+		}
+		if (pSelf->Server()->GetAuthedState(pResult->m_ClientID) < g_Config.m_SvRainbowCustom)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "you aren't allowed to use custom rainbow");
+			return;
+		}
+		int Hue = pResult->GetInteger(2) % 256;
+		int Sat = pResult->GetInteger(3) % 256;
+		int Lht = pResult->GetInteger(4) % 256;
+		int Type = (str_comp_nocase(pResult->GetString(5), "hue") == 0 ? 0 : (str_comp_nocase(pResult->GetString(5), "sat") == 0 ? 1 : 2));
+		int MaxValue = pResult->GetInteger(6) % 256;
+		bool Reverse;
+		switch (Type)
+		{
+		case 0:
+		{
+			if (MaxValue == Hue)
+				MaxValue = MaxValue++ % 256;
+			Reverse = (Hue > MaxValue);
+			break;
+		}
+		case 1:
+		{
+			if (MaxValue == Sat)
+				MaxValue = MaxValue++ % 256;
+			Reverse = (Sat > MaxValue);
+			break;
+		}
+		case 2:
+		{
+			if (MaxValue == Lht)
+				MaxValue = MaxValue++ % 256;
+			Reverse = (Lht > MaxValue);
+			break;
+		}
+		}
+		int FEET_OFFSET = pResult->GetInteger(7);
+		int SpeedMultiplier = (pResult->GetInteger(8) % 33) == 0 ? 1 : pResult->GetInteger(8) % 33;
+		char aInfoText[128];
+		str_format(aInfoText, sizeof(aInfoText), "Hue: %d, Sat: %d, Lht: %d, Type: %s, MaxValue: %d, FeetOffset: %d, Reverse: %s, SpeedMultiplier %d", Hue, Sat, Lht, pResult->GetString(5), MaxValue, FEET_OFFSET, (Reverse ? "true" : "false"), SpeedMultiplier);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow",
+			aInfoText);
+		pChr->SetRainbowCustom(Hue, Sat, Lht, Type, MaxValue, FEET_OFFSET, SpeedMultiplier);
+	}
 	if (DesiredOption >= 0)
 	{
 		pChr->SetRainbow(true);

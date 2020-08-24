@@ -47,9 +47,11 @@ enum
 	RAINBOW_FROG,
 	RAINBOW_PINK,
 	RAINBOW_PURPLE,
+	RAINBOW_GOLDEN,
 	RAINBOW_FLAG_RED,
 	RAINBOW_FLAG_BLUE,
 	RAINBOW_TRAFFICLIGHT,
+	RAINBOW_CUSTOM,
 	NUM_RAINBOWS
 };
 
@@ -211,8 +213,21 @@ private:
 	CSaveTee m_RescueTee;
 	bool m_Solo;
 
-	bool m_Rainbow;
-	int m_RainbowMode = RAINBOW_FULL;
+	struct
+	{
+		bool m_Enabled;
+		int m_Mode = RAINBOW_FULL;
+		struct
+		{
+			int m_Hue = 0;
+			int m_Sat = 0;
+			int m_Lht = 0;
+			int m_Type = 0;
+			int m_MaxValue = 32;
+			int m_FEET_OFFSET = 0;
+			int m_SpeedMultiplier = 1;
+		} m_CustomSettings;
+	} m_Rainbow;
 
 	bool m_SkinChanger;
 
@@ -331,6 +346,8 @@ public:
 
 	void SetRainbow(bool Value);
 	void SetRainbowMode(int Mode);
+	void SetRainbowCustom(int Hue, int Sat, int Lht, int Type, int MaxValue, int FEET_OFFSET = 0, int SpeedMultiplier = 1);
+
 
 	void SetSkinChanger(bool Value);
 

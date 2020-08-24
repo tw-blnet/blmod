@@ -24,9 +24,11 @@ const CRainbowOption RAINBOW_OPTIONS[] = {
 	{RAINBOW_FROG,			"frog"},
 	{RAINBOW_PINK,			"pink"},
 	{RAINBOW_PURPLE,		"purple"},
+	{RAINBOW_GOLDEN,		"golden"},
 	{RAINBOW_FLAG_RED,		"flag_red"},
 	{RAINBOW_FLAG_BLUE,		"flag_blue"},
 	{RAINBOW_TRAFFICLIGHT,	"trafficlight"},
+	{RAINBOW_CUSTOM,		"custom"},
 };
 
 // Character, "physical" player's part
@@ -788,10 +790,10 @@ void CCharacter::Tick()
 		m_pPlayer->m_TeeInfos.ToSixup();
 	}
 
-	if (m_Rainbow)
+	if (m_Rainbow.m_Enabled)
 	{
 		m_pPlayer->m_TeeInfos.m_UseCustomColor = true;
-		switch (m_RainbowMode) {
+		switch (m_Rainbow.m_Mode) {
 		case RAINBOW_FULL:
 		{
 			m_pPlayer->m_TeeInfos.m_ColorBody = ((Server()->Tick() % 0x100) << 0x10) | 0xFF00;
@@ -812,63 +814,80 @@ void CCharacter::Tick()
 
 		case RAINBOW_FLAME:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0, 0xFF, 0x00, 13, HUE, 30, 1);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0, 0xFF, 0x00, HUE, 30, 13);
 			break;
 		}
 		case RAINBOW_ICE:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 128,0xFF, 0x00, 13, HUE, 170, 1);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 128,0xFF, 0x00, HUE, 170, 13);
 			break;
 		}
 		case RAINBOW_FROG:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 63, 0x64, 0x00, 13, HUE, 96, 1);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 63, 0x64, 0x00, HUE, 96, 13);
 			break;
 		}
 		case RAINBOW_FLAG_RED:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0x00, 0, LHT, 0xC0, false, 8);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0x00, LHT, 0xC0, 0, 8);
 			break;
 		}
 		case RAINBOW_FLAG_BLUE:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xA6, 0xFF, 0x00, 0, LHT, 0xC0, false, 8);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xA6, 0xFF, 0x00, LHT, 0xC0, 0, 8);
 			break;
 		}
 		case RAINBOW_PINK:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xEA, 0xFF, 0x00, 0, LHT, 0x80, false, 2);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xEA, 0xFF, 0x00, LHT, 0x80, 0, 2);
 			break; 
 		}
 		case RAINBOW_PURPLE:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xBE, 0xC0, 0x00, 0, LHT, 0x60, false, 2);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0xBE, 0xC0, 0x00, LHT, 0x60, 0, 2);
 			break;
 		}
-		case RAINBOW_TRAFFICLIGHT:
+		case RAINBOW_GOLDEN:
 		{
-			const int Range = 0xFF;
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x21, 0xA7, 0x00, SAT, 0xFF, 13, 2);
+			break;
+		}
+		/*case RAINBOW_TRAFFICLIGHT:
+		{
+			const int Range = -0xFF;
 			const int SpeedMlt = 8;
 			const int TrafficState = (Server()->Tick() * SpeedMlt % (Range * 6)) / (Range * 2);
 			switch (TrafficState) 
 			{
 			case 0:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0x00, 0, LHT, Range, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
 				break;
 			}
 			case 1:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x2A, 0xFF, 0x00, 0, LHT, Range, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x2A, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
 				break;
 			}
 			case 2:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x55, 0xFF, 0x00, 0, LHT, Range, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x55, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
 				break;
 			}
 			}
 			break;
+		}*/
+		case RAINBOW_CUSTOM:
+		{
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 
+				m_Rainbow.m_CustomSettings.m_Hue,
+				m_Rainbow.m_CustomSettings.m_Sat,
+				m_Rainbow.m_CustomSettings.m_Lht,
+				(RainbowType)m_Rainbow.m_CustomSettings.m_Type,
+				m_Rainbow.m_CustomSettings.m_MaxValue,
+				m_Rainbow.m_CustomSettings.m_FEET_OFFSET,
+				m_Rainbow.m_CustomSettings.m_SpeedMultiplier
+			);
 		}
 		}
 
@@ -2654,7 +2673,7 @@ void CCharacter::Rescue()
 
 void CCharacter::SetRainbow(bool Value)
 {
-	if (m_Rainbow == Value)
+	if (m_Rainbow.m_Enabled == Value)
 	{
 		if (Value && m_PrevRainbow == false)
 			m_PrevRainbow = true;
@@ -2663,7 +2682,7 @@ void CCharacter::SetRainbow(bool Value)
 
 	if (Value)
 	{
-		m_Rainbow = true;
+		m_Rainbow.m_Enabled = true;
 
 		m_RealColors.m_UseCustomColor = GetPlayer()->m_TeeInfos.m_UseCustomColor;
 		m_RealColors.m_ColorBody = GetPlayer()->m_TeeInfos.m_ColorBody;
@@ -2677,7 +2696,7 @@ void CCharacter::SetRainbow(bool Value)
 	}
 	else
 	{
-		m_Rainbow = false;
+		m_Rainbow.m_Enabled = false;
 
 		GetPlayer()->m_TeeInfos.m_UseCustomColor = m_RealColors.m_UseCustomColor;
 		GetPlayer()->m_TeeInfos.m_ColorBody = m_RealColors.m_ColorBody;
@@ -2693,7 +2712,18 @@ void CCharacter::SetRainbow(bool Value)
 
 void CCharacter::SetRainbowMode(int Mode)
 {
-	m_RainbowMode = Mode;
+	m_Rainbow.m_Mode = Mode;
+}
+
+void CCharacter::SetRainbowCustom(int Hue, int Sat, int Lht, int Type, int MaxValue, int FEET_OFFSET, int SpeedMultiplier)
+{
+	m_Rainbow.m_CustomSettings.m_Hue = Hue;
+	m_Rainbow.m_CustomSettings.m_Sat = Sat;
+	m_Rainbow.m_CustomSettings.m_Lht = Lht;
+	m_Rainbow.m_CustomSettings.m_Type = Type;
+	m_Rainbow.m_CustomSettings.m_MaxValue = MaxValue;
+	m_Rainbow.m_CustomSettings.m_FEET_OFFSET = FEET_OFFSET;
+	m_Rainbow.m_CustomSettings.m_SpeedMultiplier = SpeedMultiplier;
 }
 
 void CCharacter::SetSkinChanger(bool Value)
@@ -2732,10 +2762,10 @@ void CCharacter::SetTail(bool Value)
 
 void CCharacter::OnFlagPickup(int Color)
 {
-	m_PrevRainbow = m_Rainbow;
-	m_PrevRainbowMode = m_RainbowMode;
+	m_PrevRainbow = m_Rainbow.m_Enabled;
+	m_PrevRainbowMode = m_Rainbow.m_Mode;
 
-	if (!m_Rainbow)
+	if (!m_Rainbow.m_Enabled)
 		SetRainbow(true);
 
 	SetRainbowMode(RAINBOW_FLAG_RED + Color);
