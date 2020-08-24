@@ -849,34 +849,34 @@ void CCharacter::Tick()
 		}
 		case RAINBOW_GOLDEN:
 		{
-			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x21, 0xA7, 0x00, SAT, 0xFF, 13, 2);
+			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x21, 0x80, 0x10, SAT, 0xFF, 4, 4);
 			break;
 		}
-		/*case RAINBOW_TRAFFICLIGHT:
+		case RAINBOW_TRAFFICLIGHT:
 		{
-			const int Range = -0xFF;
+			const int Range = 0xFF;
 			const int SpeedMlt = 8;
 			const int TrafficState = (Server()->Tick() * SpeedMlt % (Range * 6)) / (Range * 2);
 			switch (TrafficState) 
 			{
 			case 0:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x00, 0xFF, 0xFF, LHT, 0x00, 0, SpeedMlt);
 				break;
 			}
 			case 1:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x2A, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x2A, 0xFF, 0xFF, LHT, 0x00, 0, SpeedMlt);
 				break;
 			}
 			case 2:
 			{
-				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x55, 0xFF, 0xFF, LHT, Range, 0, true, SpeedMlt);
+				Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 0x55, 0xFF, 0xFF, LHT, 0x00, 0, SpeedMlt);
 				break;
 			}
 			}
 			break;
-		}*/
+		}
 		case RAINBOW_CUSTOM:
 		{
 			Rainbow::CycleRainbow(Server()->Tick(), m_pPlayer, 
