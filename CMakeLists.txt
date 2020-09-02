@@ -1882,6 +1882,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   entities/plasma.h
   entities/projectile.cpp
   entities/projectile.h
+  entities/rainbow.cpp
+  entities/rainbow.h
   entity.cpp
   entity.h
   eventhandler.cpp

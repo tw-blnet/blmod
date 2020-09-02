@@ -337,6 +337,8 @@ MACRO_CONFIG_INT(SvBlockImpactIntervalToResist, sv_block_impact_interval_to_resi
 MACRO_CONFIG_INT(SvBlockUnfreezeNoImpactInterval, sv_block_unfreeze_no_impact_interval, 3, 0, 0, CFGFLAG_SERVER, "How long ago player must be impacted to be blocked")
 MACRO_CONFIG_INT(SvBlockKillInterval, sv_block_kill_interval, 5, 0, 0, CFGFLAG_SERVER, "How long ago must player die to be blocked")
 
+MACRO_CONFIG_INT(SvRainbowCustom, sv_rainbow_custom_auth_level, 3, 1, 3, CFGFLAG_SERVER, "The auth level you need to use custom rainbow")
+
 // these might need some fine tuning
 MACRO_CONFIG_INT(SvChatPenalty, sv_chat_penalty, 250, 50, 1000, CFGFLAG_SERVER, "chat score will be increased by this on every message, and decremented by 1 on every tick.")
 MACRO_CONFIG_INT(SvChatThreshold, sv_chat_threshold, 1000, 50, 10000 , CFGFLAG_SERVER, "if chats core exceeds this, the player will be muted for sv_spam_mute_duration seconds")
