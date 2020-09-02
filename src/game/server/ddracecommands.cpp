@@ -1039,7 +1039,7 @@ void CGameContext::ConRainbow(IConsole::IResult *pResult, void *pUserData)
 			break;
 		}
 		}
-		int FEET_OFFSET = pResult->GetInteger(7);
+		int FEET_OFFSET = pResult->GetInteger(7) % 256;
 		int SpeedMultiplier = (pResult->GetInteger(8) % 33) == 0 ? 1 : pResult->GetInteger(8) % 33;
 		char aInfoText[128];
 		str_format(aInfoText, sizeof(aInfoText), "Hue: %d, Sat: %d, Lht: %d, Type: %s, MaxValue: %d, FeetOffset: %d, Reverse: %s, SpeedMultiplier %d", Hue, Sat, Lht, pResult->GetString(5), MaxValue, FEET_OFFSET, (Reverse ? "true" : "false"), SpeedMultiplier);
